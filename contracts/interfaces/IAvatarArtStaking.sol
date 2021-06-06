@@ -6,7 +6,7 @@ interface IAvatarArtStaking{
     /**
      * @dev Get APR
     */
-    function getApr() external view returns(uint);
+    function getAnnualProfit(uint nftStageIndex) external view returns(uint);
     
     /**
      * @dev Get total BNU token amount staked in contract
@@ -21,12 +21,12 @@ interface IAvatarArtStaking{
     /**
      * @dev Get list of staking users
      */ 
-    function getStakingUsers() external view returns(address[] memory);
+    function getStakingUsers(uint nftStageIndex) external view returns(address[] memory);
     
     /**
      * @dev Get total BNU token amount staked by `account`
      */ 
-    function getUserStakedAmount(address account) external view returns(uint);
+    function getUserStakedAmount(uint nftStageIndex, address account) external view returns(uint);
     
     /**
      * @dev User join to stake BNU and have a chance to receive an NFT from AvatarArt
@@ -34,11 +34,11 @@ interface IAvatarArtStaking{
      * An NFT will be available within 30 days from contract created or date will be configured
      * After that, this contract be only used to stake
      */ 
-    function stake(uint amount) external returns(bool);
+    function stake(uint nftStageIndex, uint amount) external returns(bool);
     
     /**
      * @dev User withdraw staked BNU from contract
      * User will receive all staked BNU and reward BNU based on APY configuration
      */ 
-    function withdraw(uint amount) external returns(bool);
+    function withdraw(uint nftStageIndex, uint amount) external returns(bool);
 }
