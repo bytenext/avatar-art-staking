@@ -2,6 +2,7 @@
 
 pragma solidity ^0.8.0;
 
+// import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "./interfaces/IAvatarArtStaking.sol";
 import "./interfaces/IERC20.sol";
 import "./core/Runnable.sol";
