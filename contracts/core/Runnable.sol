@@ -13,10 +13,6 @@ abstract contract Runnable is Ownable {
     
     bool internal _isRunning;
     
-    constructor(){
-        _isRunning = true;
-    }
-    
     function toggleRunningStatus() external onlyOwner{
         _isRunning = !_isRunning;
     }

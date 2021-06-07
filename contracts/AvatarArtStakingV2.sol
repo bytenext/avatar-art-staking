@@ -7,7 +7,7 @@ import "./interfaces/IAvatarArtStaking.sol";
 import "./interfaces/IERC20.sol";
 import "./core/Runnable.sol";
 
-contract AvatarArtStaking is IAvatarArtStaking, Runnable, Initializable{
+contract AvatarArtStakingV2 is IAvatarArtStaking, Runnable, Initializable{
     struct NftStage{
         uint duration;
         uint minAmount;
@@ -92,7 +92,11 @@ contract AvatarArtStaking is IAvatarArtStaking, Runnable, Initializable{
     function getNftStages() external view returns(NftStage[] memory){
         return _nftStages;
     }
-    
+
+    function getAmountNftStage() external view returns (uint) {
+        return _nftStages.length;
+    }
+
     function getStopTime() external view returns(uint){
         return _stopTime;
     }

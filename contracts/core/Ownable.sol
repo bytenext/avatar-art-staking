@@ -14,10 +14,6 @@ abstract contract Ownable is Context {
     address internal _owner;
     address internal _newRequestingOwner;
     
-    constructor(){
-        _owner = _msgSender();
-    }
-    
     function getOwner() external virtual view returns(address){
         return _owner;
     }

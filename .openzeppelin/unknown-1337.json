@@ -1,0 +1,392 @@
+{
+  "manifestVersion": "3.2",
+  "admin": {
+    "address": "0x250598036DCA2A37a221c0c0b7DD8E003c6A6651",
+    "txHash": "0x356f2388f668f1b5a4973bfc2f1feb21fbe50bd150b9bcaa9d94bd348b1db173"
+  },
+  "proxies": [
+    {
+      "address": "0xD81a8dbC38D0DF35e5523d810fE9690b7a6B9c75",
+      "txHash": "0x783a8167507f251c64fff6cbc412e77f200e6c1bbba74a9132d4c4824fed0444",
+      "kind": "transparent"
+    },
+    {
+      "address": "0xAae5829E2836eFB09C60089290DaC6d1c431e9bF",
+      "txHash": "0x2eae9a34cf7d25db247d30ce6c6a68b4cb3f7671764377cfec82ffccbb4d604d",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x5e6fC9c426cccd6Ba7Eb558F6B2D4695E5077B55",
+      "txHash": "0x328753025d70781574744ed98f61afd484205b097f9b8660bfba3efeb5ffad64",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x70a2d795923c62c8279081cf385336809669fb6e",
+      "txHash": "0x07d55ac7ba0493a2a66e1aac283e7dbf652de5bbdfcc42346a1d84a5b9623a3d",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x516a27B3455Af9fA6F2a254059F52d8399ca7023",
+      "txHash": "0x8d185054ff9643fc8dba956cd93abfbd5c0d4384d104627031196cd80c9ceb09",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x46F801B9e1f72B2b4164AE474EeC4e0FE68f0c2D",
+      "txHash": "0xc6d6b35549a13b1f816eb0cf627510e8d6c3af82d3f1406bbb9dce9f63250599",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x977447c870B22BA2361715E42C363A9912E1C58B",
+      "txHash": "0x534eae3ce7dd1ed0d5a87157f1c9583ccf48a456cb2ced39c8772710e7e6e8d6",
+      "kind": "transparent"
+    }
+  ],
+  "impls": {
+    "b13ed48a792dac1057bb4ef54219c044785ce9c264c0923b56f6405c77fe8705": {
+      "address": "0xE8861e376F310d484171181151eED1FECA85E0e7",
+      "txHash": "0x6ec711677b86e6d64d30a5d7b221f57433dc29f1dc2950c94b40e84bdde18760",
+      "layout": {
+        "storage": [
+          {
+            "contract": "Ownable",
+            "label": "_owner",
+            "type": "t_address",
+            "src": "core/Ownable.sol:14"
+          },
+          {
+            "contract": "Ownable",
+            "label": "_newRequestingOwner",
+            "type": "t_address",
+            "src": "core/Ownable.sol:15"
+          },
+          {
+            "contract": "Runnable",
+            "label": "_isRunning",
+            "type": "t_bool",
+            "src": "core/Runnable.sol:14"
+          },
+          {
+            "contract": "Initializable",
+            "label": "_initialized",
+            "type": "t_bool",
+            "src": "../@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:23"
+          },
+          {
+            "contract": "Initializable",
+            "label": "_initializing",
+            "type": "t_bool",
+            "src": "../@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:28"
+          },
+          {
+            "contract": "AvatarArtStaking",
+            "label": "_bnuTokenAddress",
+            "type": "t_address",
+            "src": "AvatarArtStaking.sol:23"
+          },
+          {
+            "contract": "AvatarArtStaking",
+            "label": "_stopTime",
+            "type": "t_uint256",
+            "src": "AvatarArtStaking.sol:24"
+          },
+          {
+            "contract": "AvatarArtStaking",
+            "label": "_totalStakedAmount",
+            "type": "t_uint256",
+            "src": "AvatarArtStaking.sol:27"
+          },
+          {
+            "contract": "AvatarArtStaking",
+            "label": "_userStakeds",
+            "type": "t_mapping(t_uint256,t_mapping(t_address,t_uint256))",
+            "src": "AvatarArtStaking.sol:34"
+          },
+          {
+            "contract": "AvatarArtStaking",
+            "label": "_userEarneds",
+            "type": "t_mapping(t_address,t_uint256)",
+            "src": "AvatarArtStaking.sol:38"
+          },
+          {
+            "contract": "AvatarArtStaking",
+            "label": "_userLastEarnedTimes",
+            "type": "t_mapping(t_uint256,t_mapping(t_address,t_uint256))",
+            "src": "AvatarArtStaking.sol:42"
+          },
+          {
+            "contract": "AvatarArtStaking",
+            "label": "_userLastStakingTimes",
+            "type": "t_mapping(t_uint256,t_mapping(t_address,t_uint256))",
+            "src": "AvatarArtStaking.sol:46"
+          },
+          {
+            "contract": "AvatarArtStaking",
+            "label": "_stakingHistories",
+            "type": "t_mapping(t_uint256,t_mapping(t_address,t_array(t_struct(TransactionHistory)25_storage)dyn_storage))",
+            "src": "AvatarArtStaking.sol:50"
+          },
+          {
+            "contract": "AvatarArtStaking",
+            "label": "_withdrawHistories",
+            "type": "t_mapping(t_uint256,t_mapping(t_address,t_array(t_struct(TransactionHistory)25_storage)dyn_storage))",
+            "src": "AvatarArtStaking.sol:54"
+          },
+          {
+            "contract": "AvatarArtStaking",
+            "label": "_stakingUsers",
+            "type": "t_mapping(t_uint256,t_array(t_address)dyn_storage)",
+            "src": "AvatarArtStaking.sol:58"
+          },
+          {
+            "contract": "AvatarArtStaking",
+            "label": "_nftStages",
+            "type": "t_array(t_struct(NftStage)20_storage)dyn_storage",
+            "src": "AvatarArtStaking.sol:62"
+          }
+        ],
+        "types": {
+          "t_address": {
+            "label": "address"
+          },
+          "t_uint256": {
+            "label": "uint256"
+          },
+          "t_mapping(t_uint256,t_mapping(t_address,t_uint256))": {
+            "label": "mapping(uint256 => mapping(address => uint256))"
+          },
+          "t_mapping(t_address,t_uint256)": {
+            "label": "mapping(address => uint256)"
+          },
+          "t_mapping(t_uint256,t_mapping(t_address,t_array(t_struct(TransactionHistory)25_storage)dyn_storage))": {
+            "label": "mapping(uint256 => mapping(address => struct AvatarArtStaking.TransactionHistory[]))"
+          },
+          "t_mapping(t_address,t_array(t_struct(TransactionHistory)25_storage)dyn_storage)": {
+            "label": "mapping(address => struct AvatarArtStaking.TransactionHistory[])"
+          },
+          "t_array(t_struct(TransactionHistory)25_storage)dyn_storage": {
+            "label": "struct AvatarArtStaking.TransactionHistory[]"
+          },
+          "t_struct(TransactionHistory)25_storage": {
+            "label": "struct AvatarArtStaking.TransactionHistory",
+            "members": [
+              {
+                "label": "time",
+                "type": "t_uint256"
+              },
+              {
+                "label": "amount",
+                "type": "t_uint256"
+              }
+            ]
+          },
+          "t_mapping(t_uint256,t_array(t_address)dyn_storage)": {
+            "label": "mapping(uint256 => address[])"
+          },
+          "t_array(t_address)dyn_storage": {
+            "label": "address[]"
+          },
+          "t_array(t_struct(NftStage)20_storage)dyn_storage": {
+            "label": "struct AvatarArtStaking.NftStage[]"
+          },
+          "t_struct(NftStage)20_storage": {
+            "label": "struct AvatarArtStaking.NftStage",
+            "members": [
+              {
+                "label": "duration",
+                "type": "t_uint256"
+              },
+              {
+                "label": "minAmount",
+                "type": "t_uint256"
+              },
+              {
+                "label": "annualProfit",
+                "type": "t_uint256"
+              },
+              {
+                "label": "isActive",
+                "type": "t_bool"
+              }
+            ]
+          },
+          "t_bool": {
+            "label": "bool"
+          }
+        }
+      }
+    },
+    "a3bdc013be54310085b9aeba1388507b733da7a5deebcd38974644556d830700": {
+      "address": "0xB3aA21ABBA086C562E1Ea4B47528F17b69d1C14C",
+      "txHash": "0x89f6a8528eeb83b86423f6dc9f304f471b63e702cf26b31ad5e2929c6474e9b5",
+      "layout": {
+        "storage": [
+          {
+            "contract": "Ownable",
+            "label": "_owner",
+            "type": "t_address",
+            "src": "core/Ownable.sol:14"
+          },
+          {
+            "contract": "Ownable",
+            "label": "_newRequestingOwner",
+            "type": "t_address",
+            "src": "core/Ownable.sol:15"
+          },
+          {
+            "contract": "Runnable",
+            "label": "_isRunning",
+            "type": "t_bool",
+            "src": "core/Runnable.sol:14"
+          },
+          {
+            "contract": "Initializable",
+            "label": "_initialized",
+            "type": "t_bool",
+            "src": "../@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:23"
+          },
+          {
+            "contract": "Initializable",
+            "label": "_initializing",
+            "type": "t_bool",
+            "src": "../@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:28"
+          },
+          {
+            "contract": "AvatarArtStakingV2",
+            "label": "_bnuTokenAddress",
+            "type": "t_address",
+            "src": "AvatarArtStakingV2.sol:23"
+          },
+          {
+            "contract": "AvatarArtStakingV2",
+            "label": "_stopTime",
+            "type": "t_uint256",
+            "src": "AvatarArtStakingV2.sol:24"
+          },
+          {
+            "contract": "AvatarArtStakingV2",
+            "label": "_totalStakedAmount",
+            "type": "t_uint256",
+            "src": "AvatarArtStakingV2.sol:27"
+          },
+          {
+            "contract": "AvatarArtStakingV2",
+            "label": "_userStakeds",
+            "type": "t_mapping(t_uint256,t_mapping(t_address,t_uint256))",
+            "src": "AvatarArtStakingV2.sol:34"
+          },
+          {
+            "contract": "AvatarArtStakingV2",
+            "label": "_userEarneds",
+            "type": "t_mapping(t_address,t_uint256)",
+            "src": "AvatarArtStakingV2.sol:38"
+          },
+          {
+            "contract": "AvatarArtStakingV2",
+            "label": "_userLastEarnedTimes",
+            "type": "t_mapping(t_uint256,t_mapping(t_address,t_uint256))",
+            "src": "AvatarArtStakingV2.sol:42"
+          },
+          {
+            "contract": "AvatarArtStakingV2",
+            "label": "_userLastStakingTimes",
+            "type": "t_mapping(t_uint256,t_mapping(t_address,t_uint256))",
+            "src": "AvatarArtStakingV2.sol:46"
+          },
+          {
+            "contract": "AvatarArtStakingV2",
+            "label": "_stakingHistories",
+            "type": "t_mapping(t_uint256,t_mapping(t_address,t_array(t_struct(TransactionHistory)1157_storage)dyn_storage))",
+            "src": "AvatarArtStakingV2.sol:50"
+          },
+          {
+            "contract": "AvatarArtStakingV2",
+            "label": "_withdrawHistories",
+            "type": "t_mapping(t_uint256,t_mapping(t_address,t_array(t_struct(TransactionHistory)1157_storage)dyn_storage))",
+            "src": "AvatarArtStakingV2.sol:54"
+          },
+          {
+            "contract": "AvatarArtStakingV2",
+            "label": "_stakingUsers",
+            "type": "t_mapping(t_uint256,t_array(t_address)dyn_storage)",
+            "src": "AvatarArtStakingV2.sol:58"
+          },
+          {
+            "contract": "AvatarArtStakingV2",
+            "label": "_nftStages",
+            "type": "t_array(t_struct(NftStage)1152_storage)dyn_storage",
+            "src": "AvatarArtStakingV2.sol:62"
+          }
+        ],
+        "types": {
+          "t_address": {
+            "label": "address"
+          },
+          "t_uint256": {
+            "label": "uint256"
+          },
+          "t_mapping(t_uint256,t_mapping(t_address,t_uint256))": {
+            "label": "mapping(uint256 => mapping(address => uint256))"
+          },
+          "t_mapping(t_address,t_uint256)": {
+            "label": "mapping(address => uint256)"
+          },
+          "t_mapping(t_uint256,t_mapping(t_address,t_array(t_struct(TransactionHistory)1157_storage)dyn_storage))": {
+            "label": "mapping(uint256 => mapping(address => struct AvatarArtStakingV2.TransactionHistory[]))"
+          },
+          "t_mapping(t_address,t_array(t_struct(TransactionHistory)1157_storage)dyn_storage)": {
+            "label": "mapping(address => struct AvatarArtStakingV2.TransactionHistory[])"
+          },
+          "t_array(t_struct(TransactionHistory)1157_storage)dyn_storage": {
+            "label": "struct AvatarArtStakingV2.TransactionHistory[]"
+          },
+          "t_struct(TransactionHistory)1157_storage": {
+            "label": "struct AvatarArtStakingV2.TransactionHistory",
+            "members": [
+              {
+                "label": "time",
+                "type": "t_uint256"
+              },
+              {
+                "label": "amount",
+                "type": "t_uint256"
+              }
+            ]
+          },
+          "t_mapping(t_uint256,t_array(t_address)dyn_storage)": {
+            "label": "mapping(uint256 => address[])"
+          },
+          "t_array(t_address)dyn_storage": {
+            "label": "address[]"
+          },
+          "t_array(t_struct(NftStage)1152_storage)dyn_storage": {
+            "label": "struct AvatarArtStakingV2.NftStage[]"
+          },
+          "t_struct(NftStage)1152_storage": {
+            "label": "struct AvatarArtStakingV2.NftStage",
+            "members": [
+              {
+                "label": "duration",
+                "type": "t_uint256"
+              },
+              {
+                "label": "minAmount",
+                "type": "t_uint256"
+              },
+              {
+                "label": "annualProfit",
+                "type": "t_uint256"
+              },
+              {
+                "label": "isActive",
+                "type": "t_bool"
+              }
+            ]
+          },
+          "t_bool": {
+            "label": "bool"
+          }
+        }
+      }
+    }
+  }
+}
