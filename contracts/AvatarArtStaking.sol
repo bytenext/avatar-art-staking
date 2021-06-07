@@ -227,7 +227,7 @@ contract AvatarArtStaking is IAvatarArtStaking, Runnable{
         NftStage memory nftStage = _nftStages[nftStageIndex];
         require(nftStage.isActive, "This staking stage is inactive");
         if(nftStage.minAmount > 0){
-            require(amount >= nftStage.minAmount, "Not enough mininum amount to stake");
+            require(_userStakeds[nftStageIndex][_msgSender()] + amount >= nftStage.minAmount, "Not enough mininum amount to stake");
         }
         
         //Transfer token from user address to contract
