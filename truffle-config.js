@@ -2,6 +2,7 @@
 const HDWalletProvider = require('@truffle/hdwallet-provider');
 const fs = require('fs');
 const mnemonic = fs.readFileSync(".secret").toString().trim();
+const apiKey = fs.readFileSync(".apikey").toString().trim();
 
 module.exports = {
   networks: {
@@ -18,10 +19,15 @@ module.exports = {
       skipDryRun: true
     }
   },
+  plugins: [
+    'truffle-plugin-verify'
+  ],
+  api_keys: {
+    bscscan: apiKey
+  },
   mocha: {
     // timeout: 100000
   },
-  // Configure your compilers
   compilers: {
     solc: {
        version: "^0.8.0",
