@@ -7,7 +7,9 @@ import "./core/Ownable.sol";
 import "./core/ERC20.sol";
 
 contract BNUToken is ERC20, Ownable{
-    constructor() ERC20("ByteNext","BNU"){}
+    constructor() ERC20("ByteNext","BNU"){
+        _owner = _msgSender();
+    }
     
     function mint(address account, uint256 amount) external onlyOwner{
         _mint(account, amount);

@@ -29,10 +29,7 @@ interface IAvatarArtStaking{
     function getUserStakedAmount(uint nftStageIndex, address account) external view returns(uint);
     
     /**
-     * @dev User join to stake BNU and have a chance to receive an NFT from AvatarArt
-     * 
-     * An NFT will be available within 30 days from contract created or date will be configured
-     * After that, this contract be only used to stake
+     * @dev User join to stake BNU
      */ 
     function stake(uint nftStageIndex, uint amount) external returns(bool);
     
