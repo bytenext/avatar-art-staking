@@ -141,6 +141,10 @@ contract AvatarArtStaking is IAvatarArtStaking, Runnable{
         return _getUserLastEarnedTime(lockStageIndex, account);
     }
     
+    function getUserLastStakingTime(uint lockStageIndex, address account) external view returns(uint){
+        return _getUserLastStakingTime(lockStageIndex, account);
+    }
+    
     function getUserRewardPendingTime(uint lockStageIndex, address account) external view returns(uint){
         return _getUserRewardPendingTime(lockStageIndex, account);
     }
@@ -282,7 +286,7 @@ contract AvatarArtStaking is IAvatarArtStaking, Runnable{
         
         //Calculate to withdraw staked amount
         if(amount > 0){
-            uint lastStakingTime = _userLastStakingTimes[lockStageIndex][_msgSender()];
+            uint lastStakingTime = _getUserLastStakingTime(lockStageIndex, _msgSender());
             if(lastStakingTime + _lockStages[lockStageIndex].duration < _now()){
                 _userStakeds[lockStageIndex][_msgSender()] -= amount;    //Do not need to check `amount` <= user staked
                 _totalStakedAmount -= amount;
@@ -350,6 +354,10 @@ contract AvatarArtStaking is IAvatarArtStaking, Runnable{
     
     function _getUserLastEarnedTime(uint lockStageIndex, address account) internal view returns(uint){
         return _userLastEarnedTimes[lockStageIndex][account];
+    }
+    
+    function _getUserLastStakingTime(uint lockStageIndex, address account) internal view returns(uint){
+        return _userLastStakingTimes[lockStageIndex][account];
     }
     
     function _getUserRewardPendingTime(uint lockStageIndex, address account) internal view returns(uint){
