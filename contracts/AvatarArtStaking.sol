@@ -24,9 +24,8 @@ contract AvatarArtStaking is IAvatarArtStaking, Runnable{
     
     //Store all BNU token amount that is staked in contract
     uint internal _totalStakedAmount;
-    uint public constant APR_MULTIPLIER = 1000;
+    uint public constant MULTIPLIER = 1000;
     uint public constant ONE_YEAR = 365 days;
-    uint public constant ONE_DAY = 1 days;
     
     //Store all BNU token amount that is staked by user
     //Mapping LockStage index => user account => token amount
@@ -337,7 +336,7 @@ contract AvatarArtStaking is IAvatarArtStaking, Runnable{
      * based on user staked amount and annualProfit
      */ 
     function _calculatePendingEarned(uint lockStageIndex, uint userStakedAmount, uint pendingTime) internal view returns(uint){
-        return userStakedAmount * pendingTime * _lockStages[lockStageIndex].annualProfit / APR_MULTIPLIER / ONE_YEAR / 100;
+        return userStakedAmount * pendingTime * _lockStages[lockStageIndex].annualProfit / MULTIPLIER / ONE_YEAR / 100;
     }
     
     /**
