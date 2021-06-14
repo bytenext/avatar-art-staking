@@ -20,4 +20,8 @@ abstract contract Runnable is Ownable {
     function toggleRunningStatus() external onlyOwner{
         _isRunning = !_isRunning;
     }
+
+    function getRunningStatus() external view returns(bool){
+        return _isRunning;
+    }
 }

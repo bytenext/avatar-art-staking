@@ -9,3 +9,5 @@ build/contracts/IERC20Metadata.json
 build/contracts/Migrations.json
 build/contracts/Ownable.json
 build/contracts/Runnable.json
+.private-key
+.api-key
