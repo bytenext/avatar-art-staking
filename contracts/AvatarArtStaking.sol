@@ -24,9 +24,8 @@ contract AvatarArtStaking is IAvatarArtStaking, Runnable{
     
     //Store all BNU token amount that is staked in contract
     uint internal _totalStakedAmount;
-    uint public constant APR_MULTIPLIER = 1000;
+    uint public constant MULTIPLIER = 1000;
     uint public constant ONE_YEAR = 365 days;
-    uint public constant ONE_DAY = 1 days;
     
     //Store all BNU token amount that is staked by user
     //Mapping LockStage index => user account => token amount
@@ -86,6 +85,14 @@ contract AvatarArtStaking is IAvatarArtStaking, Runnable{
     function getBnuTokenAddress() external view returns(address){
         return _bnuTokenAddress;
     }
+
+    /**
+    * @dev Get lock stage information by index
+    */
+    function getLockStage(uint lockStageIndex) external view returns(LockStage memory){
+        require(lockStageIndex < _lockStages.length, "Out of length");
+        return _lockStages[lockStageIndex];
+    }
     
     function getLockStages() external view returns(LockStage[] memory){
         return _lockStages;
@@ -141,6 +148,10 @@ contract AvatarArtStaking is IAvatarArtStaking, Runnable{
         return _getUserLastEarnedTime(lockStageIndex, account);
     }
     
+    function getUserLastStakingTime(uint lockStageIndex, address account) external view returns(uint){
+        return _getUserLastStakingTime(lockStageIndex, account);
+    }
+    
     function getUserRewardPendingTime(uint lockStageIndex, address account) external view returns(uint){
         return _getUserRewardPendingTime(lockStageIndex, account);
     }
@@ -149,7 +160,7 @@ contract AvatarArtStaking is IAvatarArtStaking, Runnable{
      * @dev Get total BNU token amount staked by `account`
      */ 
     function getUserStakedAmount(uint lockStageIndex, address account) external override view returns(uint){
-        return _userStakeds[lockStageIndex][account];
+        return _getUserStakedAmount(lockStageIndex, account);
     }
     
     /**
@@ -251,7 +262,7 @@ contract AvatarArtStaking is IAvatarArtStaking, Runnable{
         _userLastStakingTimes[lockStageIndex][_msgSender()] = _now();
         
         //Emit events
-        emit Staked(_msgSender(), amount);
+        emit Staked(lockStageIndex, _msgSender(), amount);
         
         return true;
     }
@@ -271,10 +282,14 @@ contract AvatarArtStaking is IAvatarArtStaking, Runnable{
     }
     
     /**
-     * @dev See IAvatarArtStaking
+     * @dev Withdraw staked amount in lockStage by index and pay earned token
+     * If withdraw amount = 0; only pay earned token
      */ 
     function withdraw(uint lockStageIndex, uint amount) external override returns(bool){
         require(lockStageIndex < _lockStages.length, "Out of length");
+        if(amount > 0){
+            require(amount <= _getUserStakedAmount(lockStageIndex, _msgSender()), "Amount is invalid");
+        }
         //Calculate interest and store with extra interest
         _calculateInterest(_msgSender());
         
@@ -282,7 +297,7 @@ contract AvatarArtStaking is IAvatarArtStaking, Runnable{
         
         //Calculate to withdraw staked amount
         if(amount > 0){
-            uint lastStakingTime = _userLastStakingTimes[lockStageIndex][_msgSender()];
+            uint lastStakingTime = _getUserLastStakingTime(lockStageIndex, _msgSender());
             if(lastStakingTime + _lockStages[lockStageIndex].duration < _now()){
                 _userStakeds[lockStageIndex][_msgSender()] -= amount;    //Do not need to check `amount` <= user staked
                 _totalStakedAmount -= amount;
@@ -306,7 +321,7 @@ contract AvatarArtStaking is IAvatarArtStaking, Runnable{
             _withdrawHistories[lockStageIndex][_msgSender()].push(TransactionHistory(_now(), amount));
         
         //Emit events 
-        emit Withdrawn(_msgSender(), amount);
+        emit Withdrawn(lockStageIndex, _msgSender(), amount);
         
         return true;
     }
@@ -333,7 +348,7 @@ contract AvatarArtStaking is IAvatarArtStaking, Runnable{
      * based on user staked amount and annualProfit
      */ 
     function _calculatePendingEarned(uint lockStageIndex, uint userStakedAmount, uint pendingTime) internal view returns(uint){
-        return userStakedAmount * pendingTime * _lockStages[lockStageIndex].annualProfit / APR_MULTIPLIER / ONE_YEAR / 100;
+        return userStakedAmount * pendingTime * _lockStages[lockStageIndex].annualProfit / MULTIPLIER / ONE_YEAR / 100;
     }
     
     /**
@@ -352,13 +367,21 @@ contract AvatarArtStaking is IAvatarArtStaking, Runnable{
         return _userLastEarnedTimes[lockStageIndex][account];
     }
     
+    function _getUserLastStakingTime(uint lockStageIndex, address account) internal view returns(uint){
+        return _userLastStakingTimes[lockStageIndex][account];
+    }
+    
     function _getUserRewardPendingTime(uint lockStageIndex, address account) internal view returns(uint){
         if(!_isRunning && _stopTime > 0)
             return _stopTime - _getUserLastEarnedTime(lockStageIndex, account);
         return _now() - _getUserLastEarnedTime(lockStageIndex, account);
     }
+
+    function _getUserStakedAmount(uint lockStageIndex, address account) internal view returns(uint){
+        return _userStakeds[lockStageIndex][account];
+    }
     
-    event Staked(address account, uint amount);
-    event Withdrawn(address account, uint amount);
+    event Staked(uint lockStageIndex, address account, uint amount);
+    event Withdrawn(uint lockStageIndex, address account, uint amount);
     event Stopped(uint time);
 }
