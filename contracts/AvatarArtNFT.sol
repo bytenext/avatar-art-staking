@@ -2,8 +2,8 @@
 
 pragma solidity ^0.8.0;
 
-import "https://raw.githubusercontent.com/OpenZeppelin/openzeppelin-contracts/master/contracts/token/ERC721/ERC721.sol";
-import "https://raw.githubusercontent.com/OpenZeppelin/openzeppelin-contracts/master/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "./interfaces/IAvatarArtArtistKYC.sol";
 
 contract AvatarArtNFT is ERC721, Ownable{
@@ -13,7 +13,7 @@ contract AvatarArtNFT is ERC721, Ownable{
     
     /**
      * @dev Create new NFT 
-     */ 
+     */
     function create(uint tokenId) external returns(bool){
         require(_avatarArtArtistKYC.isVerified(msg.sender), "Forbidden");
         _safeMint(msg.sender, tokenId);
