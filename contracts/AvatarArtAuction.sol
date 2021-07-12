@@ -176,10 +176,8 @@ contract AvatarArtAuction is AvatarArtBase, IAvatarArtAuction{
     }
     
      /**
-     * @dev Owner update token price for specific auction, definied by `auctionIndex`
+     * @dev {See - IAvatarArtAuction.updateActionPrice}
      * 
-     * REQUIREMENTS
-     *  1. Auction is not active, has not been started yet
      */ 
     function updateActionPrice(uint256 auctionIndex, uint256 price) external override onlyOwner returns(bool){
         require(auctionIndex < getAuctionCount());
@@ -192,10 +190,8 @@ contract AvatarArtAuction is AvatarArtBase, IAvatarArtAuction{
     }
     
     /**
-     * @dev Owner updates auction time, definied by `auctionIndex`
+     * @dev {See - IAvatarArtAuction.updateActionTime}
      * 
-     * REQUIREMENTS
-     *  1. Auction is not active, has not been started yet
      */ 
     function updateActionTime(uint256 auctionIndex, uint256 startTime, uint256 endTime) external override onlyOwner returns(bool){
         require(auctionIndex < getAuctionCount());
