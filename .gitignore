@@ -3,5 +3,4 @@ node_modules/
 yarn.lock
 .secret
 .apikey
-.openzeppelin/
 
