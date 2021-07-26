@@ -146,6 +146,33 @@ contract AvatarArtAuction is AvatarArtBase, IAvatarArtAuction{
         return _auctions[auctionIndex];
     }
     
+     /**
+     * @dev Get all completed auctions for specific tokenId with auction winner
+     */ 
+    function getAuctionWinnersByTokenId(uint256 tokenId) public view returns(Auction[] memory){
+        uint256 resultCount = 0;
+        for(uint256 index = 0; index < _auctions.length; index++){
+            Auction memory auction = _auctions[index];
+            if(auction.tokenId == tokenId && auction.status == EAuctionStatus.Completed)
+                resultCount++;
+        }
+        
+        if(resultCount == 0)
+            return new Auction[](0);
+            
+        Auction[] memory result = new Auction[](resultCount);
+        resultCount = 0;
+        for(uint256 index = 0; index < _auctions.length; index++){
+            Auction memory auction = _auctions[index];
+            if(auction.tokenId == tokenId && auction.status == EAuctionStatus.Completed){
+                result[resultCount] = auction;
+                resultCount++;
+            }
+        }
+        
+        return result;
+    }
+    
     /**
      * @dev {See - IAvatarArtAuction.place}
      * 
