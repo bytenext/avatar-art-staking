@@ -8,6 +8,12 @@ import "./interfaces/IAvatarArtAuction.sol";
 import "./AvatarArtBase.sol";
 
 contract AvatarArtAuction is AvatarArtBase, IAvatarArtAuction{
+    enum EAuctionStatus{
+        Open,
+        Completed,
+        Canceled
+    }
+    
     //Store information of specific auction
     struct Auction{
         uint256 startTime;
@@ -16,7 +22,7 @@ contract AvatarArtAuction is AvatarArtBase, IAvatarArtAuction{
         address tokenOwner;
         uint256 price;
         address winner;
-        bool active;
+        EAuctionStatus status;       //0:Open, 1: Closed, 2: Canceled
     }
     
     //Store auction history when a user places
@@ -54,7 +60,7 @@ contract AvatarArtAuction is AvatarArtBase, IAvatarArtAuction{
         
         avatarArtNFT.safeTransferFrom(tokenOwner, address(this), tokenId);
         
-        _auctions.push(Auction(startTime, endTime, tokenId, tokenOwner, price, address(0), true));
+        _auctions.push(Auction(startTime, endTime, tokenId, tokenOwner, price, address(0), EAuctionStatus.Open));
         
         emit NewAuctionCreated(tokenId, startTime, endTime, price);
         
@@ -67,7 +73,7 @@ contract AvatarArtAuction is AvatarArtBase, IAvatarArtAuction{
      */ 
     function deactivateAuction(uint256 auctionIndex) external override onlyOwner returns(bool){
         require(auctionIndex < getAuctionCount());
-        _auctions[auctionIndex].active = false;
+        _auctions[auctionIndex].status = EAuctionStatus.Canceled;
         return true;
     }
     
@@ -83,7 +89,7 @@ contract AvatarArtAuction is AvatarArtBase, IAvatarArtAuction{
     function distribute(uint256 auctionIndex) external override returns(bool){       //Anyone can call this function
         require(auctionIndex < getAuctionCount());
         Auction storage auction = _auctions[auctionIndex];
-        require(auction.active && auction.endTime < _now());
+        require(auction.status == EAuctionStatus.Open && auction.endTime < _now());
         
         //If have auction
         if(auction.winner != address(0)){
@@ -107,7 +113,7 @@ contract AvatarArtAuction is AvatarArtBase, IAvatarArtAuction{
             getAvatarArtNFT().safeTransferFrom(address(this), auction.tokenOwner, auction.tokenId);
         }
         
-        auction.active = false;
+        auction.status = EAuctionStatus.Completed;
         
         return true;
     }
@@ -118,11 +124,11 @@ contract AvatarArtAuction is AvatarArtBase, IAvatarArtAuction{
     function getActiveAuctionByTokenId(uint256 tokenId) public view returns(bool, Auction memory){
         for(uint256 index = _auctions.length; index > 0; index--){
             Auction memory auction = _auctions[index - 1];
-            if(auction.tokenId == tokenId && auction.active && auction.startTime <= _now() && auction.endTime >= _now())
+            if(auction.tokenId == tokenId && auction.status == EAuctionStatus.Open && auction.startTime <= _now() && auction.endTime >= _now())
                 return (true, auction);
         }
         
-        return (false, Auction(0,0,0, address(0), 0, address(0), false));
+        return (false, Auction(0,0,0, address(0), 0, address(0), EAuctionStatus.Open));
     }
     
     /**
@@ -151,7 +157,7 @@ contract AvatarArtAuction is AvatarArtBase, IAvatarArtAuction{
     function place(uint256 auctionIndex, uint256 price) external override returns(bool){
         require(auctionIndex < getAuctionCount());
         Auction storage auction = _auctions[auctionIndex];
-        require(auction.active && auction.startTime <= _now() && auction.endTime >= _now(), "Invalid auction");
+        require(auction.status == EAuctionStatus.Open && auction.startTime <= _now() && auction.endTime >= _now(), "Invalid auction");
         require(price > auction.price, "Invalid price");
         
         IERC20 bnuToken = getBnuToken();
