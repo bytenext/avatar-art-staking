@@ -49,15 +49,14 @@ contract AvatarArtAuction is AvatarArtBase, IAvatarArtAuction{
      *  2. Add new auction
      *  3. Transfer NFT to contract
      */ 
-    function createAuction(uint256 tokenId, uint256 startTime, uint256 endTime, uint256 price, address tokenOwner) external override onlyOwner returns(uint256){
+    function createAuction(uint256 tokenId, uint256 startTime, uint256 endTime, uint256 price) external override onlyOwner returns(uint256){
         require(_now() <= startTime, "Start time is invalid");
         require(startTime < endTime, "Time is invalid");
         (bool isExisted,) = getActiveAuctionByTokenId(tokenId);
         require(!isExisted, "Token is in other auction");
         
         IERC721 avatarArtNFT = getAvatarArtNFT();
-        require(avatarArtNFT.ownerOf(tokenId) == tokenOwner, "Not token owner");
-        
+        address tokenOwner = avatarArtNFT.ownerOf(tokenId);
         avatarArtNFT.safeTransferFrom(tokenOwner, address(this), tokenId);
         
         _auctions.push(Auction(startTime, endTime, tokenId, tokenOwner, price, address(0), EAuctionStatus.Open));
