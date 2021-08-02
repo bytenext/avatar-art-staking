@@ -11,7 +11,7 @@ interface IAvatarArtMarketPlace{
     /**
      * @dev Create a sell order to sell BNU category
      */
-    function createSellOrder(uint tokenId, uint price, address tokenOwner) external returns(bool);
+    function createSellOrder(uint tokenId, uint price) external returns(bool);
     
     /**
      * @dev User purchases a BNU category

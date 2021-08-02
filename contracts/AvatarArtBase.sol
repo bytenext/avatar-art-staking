@@ -2,12 +2,10 @@
 
 pragma solidity ^0.8.0;
 
-import "https://raw.githubusercontent.com/OpenZeppelin/openzeppelin-contracts/master/contracts/token/ERC721/IERC721Receiver.sol";
-import "https://raw.githubusercontent.com/OpenZeppelin/openzeppelin-contracts/master/contracts/token/ERC721/IERC721.sol";
+import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
+import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "./interfaces/IERC20.sol";
-
 import "./core/Ownable.sol";
-
 
 contract AvatarArtBase is Ownable, IERC721Receiver{
     uint256 public MULTIPLIER = 1000;

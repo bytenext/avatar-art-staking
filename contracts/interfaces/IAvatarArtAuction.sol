@@ -12,7 +12,7 @@ interface IAvatarArtAuction{
      * 
      * @return Auction index
      */ 
-    function createAuction(uint256 tokenId, uint256 startTime, uint256 endTime, uint256 price, address tokenOwner) external returns(uint256);
+    function createAuction(uint256 tokenId, uint256 startTime, uint256 endTime, uint256 price) external returns(uint256);
     
     /**
      * @dev Owner distributes NFT to winner
