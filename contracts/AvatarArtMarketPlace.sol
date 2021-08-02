@@ -31,11 +31,12 @@ contract AvatarArtMarketPlace is AvatarArtBase, IAvatarArtMarketPlace{
     /**
      * @dev Create a sell order to sell BNU category
      */
-    function createSellOrder(uint256 tokenId, uint256 price, address tokenOwner) external onlyOwner override returns(bool){
+    function createSellOrder(uint256 tokenId, uint256 price) external onlyOwner override returns(bool){
         //Validate
         require(_tokenOwners[tokenId] == address(0), "Can not create sell order for this token");
         IERC721 avatarArtNFT = getAvatarArtNFT();
-        require(avatarArtNFT.ownerOf(tokenId) == tokenOwner, "You have no permission to create sell order for this token");
+        
+        address tokenOwner = avatarArtNFT.ownerOf(tokenId);
         
         //Transfer AvatarArtNFT to contract
         avatarArtNFT.safeTransferFrom(tokenOwner, address(this), tokenId);
