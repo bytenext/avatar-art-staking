@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
 
 import "./interfaces/IERC20.sol";
-import "./interfaces/IAvatarArtOrderBook.sol";
+import "./interfaces/IAvatarArtExchange.sol";
 import "./core/Runnable.sol";
 
 pragma solidity ^0.8.0;
 
-contract AvatarArtOrderBook is Runnable, IAvatarArtOrderBook{
+contract AvatarArtOrderBook is Runnable, IAvatarArtExchange{
     enum EOrderType{
         Buy, 
         Sell
