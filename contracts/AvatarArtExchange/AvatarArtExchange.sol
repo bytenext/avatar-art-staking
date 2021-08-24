@@ -6,7 +6,7 @@ import ".././core/Runnable.sol";
 
 pragma solidity ^0.8.0;
 
-contract AvatarArtOrderBook is Runnable, IAvatarArtExchange{
+contract AvatarArtExchange is Runnable, IAvatarArtExchange{
     modifier onlyAdmin{
         require(_msgSender() == deployerAddress || _msgSender() == _owner, "Forbidden");
         _;
