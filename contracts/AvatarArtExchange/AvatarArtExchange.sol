@@ -34,6 +34,7 @@ contract AvatarArtOrderBook is Runnable, IAvatarArtExchange{
     }
     
     uint256 constant public MULTIPLIER = 1000;
+    uint256 constant public PRICE_MULTIPLIER = 1000000000000000000;
     
     //Address of contract that will generate token for specific NFT
     address public deployerAddress;
@@ -247,10 +248,10 @@ contract AvatarArtOrderBook is Runnable, IAvatarArtExchange{
                     emit PriceChanged(token0Address, token1Address, changePrice, _now());
                 }
 
-                totalPaidAmount += currentFilledQuantity * matchedOrder.price;
+                totalPaidAmount += currentFilledQuantity * matchedOrder.price / PRICE_MULTIPLIER;
                 
                 //Create matched order
-                emit OrderFilled(token0Address, token1Address, order.orderId, matchedOrder.orderId, matchedOrder.price, currentFilledQuantity, _now());
+                emit OrderFilled(order.orderId, matchedOrder.orderId, matchedOrder.price, currentFilledQuantity, _now());
 
                 //Increase buy user token0 balance
                 _feeTotal += currentFilledQuantity * _fee / 100 / MULTIPLIER;
@@ -259,14 +260,14 @@ contract AvatarArtOrderBook is Runnable, IAvatarArtExchange{
                 //Increase sell user token1 balance
                 IERC20(token1Address).transfer(matchedOrder.owner, currentFilledQuantity * matchedOrder.price * (1 - matchedOrder.fee / 100 / MULTIPLIER));
 
-                emit RefreshUserOrders(token0Address, token1Address, matchedOrder.owner);
+                emit RefreshUserOrders(matchedOrder.owner);
                 
                 if (needToMatchedQuantity == 0)
                     break;
             }
         }
 
-        totalPaidAmount += price * (quantity - matchedQuantity);
+        totalPaidAmount += price * (quantity - matchedQuantity) / PRICE_MULTIPLIER;
         if(totalPaidAmount > 0)
             IERC20(token1Address).transferFrom(_msgSender(), address(this), totalPaidAmount);
 
@@ -283,7 +284,7 @@ contract AvatarArtOrderBook is Runnable, IAvatarArtExchange{
             _feeTotal = 0;
         }
         
-        emit RefreshUserOrders(token0Address, token1Address, _msgSender());
+        emit RefreshUserOrders(_msgSender());
         
         //Event for all user to refresh buy order
         emit RefreshOpenOrders(token0Address, token1Address, EOrderType.Buy);
@@ -293,7 +294,7 @@ contract AvatarArtOrderBook is Runnable, IAvatarArtExchange{
             emit RefreshOpenOrders(token0Address, token1Address, EOrderType.Sell);
         
         _buyOrderIndex++;
-        emit OrderCreated(_now(), _msgSender(), token0Address, token1Address, EOrderType.Buy, price, quantity);
+        emit OrderCreated(_now(), _msgSender(), token0Address, token1Address, EOrderType.Buy, price, quantity, order.orderId);
         return true;
     }
     
@@ -348,7 +349,7 @@ contract AvatarArtOrderBook is Runnable, IAvatarArtExchange{
                     _updateOrderToBeFilled(token0Address, token1Address, matchedOrder.orderId, EOrderType.Buy);
                 }
                 
-                emit OrderFilled(token0Address, token1Address, matchedOrder.orderId, order.orderId, matchedOrder.price, currentMatchedQuantity, _now());
+                emit OrderFilled(matchedOrder.orderId, order.orderId, matchedOrder.price, currentMatchedQuantity, _now());
                
                 if (matchedOrder.price != changedPrice)
                     emit PriceChanged(token0Address, token1Address, changedPrice, _now());
@@ -357,10 +358,10 @@ contract AvatarArtOrderBook is Runnable, IAvatarArtExchange{
                 IERC20(token0Address).transfer(matchedOrder.owner, currentMatchedQuantity * (1 - matchedOrder.fee / 100 / MULTIPLIER));
 
                 //Increase sell user token1 balance
-                _feeTotal += currentMatchedQuantity * matchedOrder.price * _fee / 100 / MULTIPLIER;
-                IERC20(token1Address).transfer(_msgSender(), currentMatchedQuantity * matchedOrder.price * (1 - _fee / 100 / MULTIPLIER));
+                _feeTotal += currentMatchedQuantity * matchedOrder.price * _fee / 100 / MULTIPLIER / PRICE_MULTIPLIER;
+                IERC20(token1Address).transfer(_msgSender(), currentMatchedQuantity * matchedOrder.price * (1 - _fee / 100 / MULTIPLIER / PRICE_MULTIPLIER));
 
-                emit RefreshUserOrders(token0Address, token1Address, matchedOrder.owner);
+                emit RefreshUserOrders(matchedOrder.owner);
 
                 if (needToMatchedQuantity == 0)
                     break;
@@ -380,7 +381,7 @@ contract AvatarArtOrderBook is Runnable, IAvatarArtExchange{
             _feeTotal = 0;
         }
         
-        emit RefreshUserOrders(token0Address, token1Address, _msgSender());
+        emit RefreshUserOrders(_msgSender());
         
         //Event for all user to refresh buy order
         emit RefreshOpenOrders(token0Address, token1Address, EOrderType.Sell);
@@ -390,7 +391,7 @@ contract AvatarArtOrderBook is Runnable, IAvatarArtExchange{
             emit RefreshOpenOrders(token0Address, token1Address, EOrderType.Buy);
 
         _sellOrderIndex++;
-        emit OrderCreated(_now(), _msgSender(), token0Address, token1Address, EOrderType.Sell, price, quantity);
+        emit OrderCreated(_now(), _msgSender(), token0Address, token1Address, EOrderType.Sell, price, quantity, order.orderId);
         return true;
     }
     
@@ -420,6 +421,7 @@ contract AvatarArtOrderBook is Runnable, IAvatarArtExchange{
                 order.status = EOrderStatus.Canceled;
                 IERC20(token1Address).transfer(order.owner, (order.quantity - order.filledQuantity) * order.price);
                 emit OrderCanceled(_now(), orderId);
+                
                 break;
             }
         }
@@ -493,10 +495,11 @@ contract AvatarArtOrderBook is Runnable, IAvatarArtExchange{
         }
     }
     
-    event OrderCreated(uint256 time, address indexed account, address token0Address, address token1Address, EOrderType orderType, uint256 price, uint256 quantity);
+    event OrderCreated(uint256 time, address account, 
+        address token0Address, address token1Address, EOrderType orderType, uint256 price, uint256 quantity, uint256 orderId);
     event OrderCanceled(uint256 time, uint256 orderId);
     event PriceChanged(address token0Address, address token1Address, uint256 price, uint256 time);
-    event RefreshUserOrders(address token0Address, address token1Address, address account);
+    event RefreshUserOrders(address account);
     event RefreshOpenOrders(address token0Address, address token1Address, EOrderType orderType);
-    event OrderFilled(address token0Address, address token1Address, uint256 buyOrderId, uint256 sellOrderId, uint256 price, uint256 quantity, uint256 time);
+    event OrderFilled(uint256 buyOrderId, uint256 sellOrderId, uint256 price, uint256 quantity, uint256 time);
 }
