@@ -39,43 +39,30 @@ contract AvatarArtOrderBook is Runnable, IAvatarArtExchange{
     uint256 constant public MULTIPLIER = 1000;
     
     //Address of contract that will generate token for specific NFT
-    address private _generatorAddress;
-    IERC20 private _bnuToken;
+    address public _generatorAddress;
     
-    uint256 private _fee;
+    uint256 public _fee;
     uint256 private _buyOrderIndex = 1;
     uint256 private _sellOrderIndex = 1;
     
-    //Checks whether an `itemAddress` can be tradable or not
-    mapping(address => bool) private _isTradableItems;
+    //Checks whether an `token0Address` can be tradable or not
+    mapping(address => mapping(address => bool)) public _isTradable;
     
     //Stores users' orders for trading
-    mapping(address => Order[]) private _buyOrders;
-    mapping(address => Order[]) private _sellOrders;
+    mapping(address => mapping(address => Order[])) public _buyOrders;
+    mapping(address => mapping(address => Order[])) public _sellOrders;
     
-    mapping(address => FilledHistory[]) private _filledHistories;
-    
-    function getBnuToken() public view returns(IERC20){
-        return _bnuToken;
-    }
-    
-    function getFee() public view returns(uint256){
-        return _fee;
-    }
-    
-    function getGeneratorAddress() public view returns(address){
-        return _generatorAddress;
-    }
+    mapping(address => mapping(address => FilledHistory[])) public _filledHistories;
     
     /**
-     * @dev Get all open orders by `itemAddress`
+     * @dev Get all open orders by `token0Address`
      */ 
-    function getOpenOrders(address itemAddress, EOrderType orderType) public view returns(Order[] memory){
+    function getOpenOrders(address token0Address, address token1Address, EOrderType orderType) public view returns(Order[] memory){
         Order[] memory orders;
         if(orderType == EOrderType.Buy)
-            orders = _buyOrders[itemAddress];
+            orders = _buyOrders[token0Address][token1Address];
         else
-            orders = _sellOrders[itemAddress];
+            orders = _sellOrders[token0Address][token1Address];
         if(orders.length == 0)
             return orders;
         
@@ -98,10 +85,10 @@ contract AvatarArtOrderBook is Runnable, IAvatarArtExchange{
     }
     
     /**
-     * @dev Get buying orders that can be filled with `price` of `itemAddress`
+     * @dev Get buying orders that can be filled with `price` of `token0Address`
      */ 
-    function getOpenBuyOrdersForPrice(address itemAddress, uint256 price) public view returns(Order[] memory){
-        Order[] memory orders = _buyOrders[itemAddress];
+    function getOpenBuyOrdersForPrice(address token0Address, address token1Address, uint256 price) public view returns(Order[] memory){
+        Order[] memory orders = _buyOrders[token0Address][token1Address];
         if(orders.length == 0)
             return orders;
         
@@ -123,16 +110,16 @@ contract AvatarArtOrderBook is Runnable, IAvatarArtExchange{
         return result;
     }
     
-    function getOrders(address itemAddress, EOrderType orderType) public view returns(Order[] memory){
-        return orderType == EOrderType.Buy ? _buyOrders[itemAddress] : _sellOrders[itemAddress];
+    function getOrders(address token0Address, address token1Address, EOrderType orderType) public view returns(Order[] memory){
+        return orderType == EOrderType.Buy ? _buyOrders[token0Address][token1Address] : _sellOrders[token0Address][token1Address];
     }
     
-    function getUserOrders(address itemAddress, address account, EOrderType orderType) public view returns(Order[] memory){
+    function getUserOrders(address token0Address, address token1Address, address account, EOrderType orderType) public view returns(Order[] memory){
         Order[] memory orders;
         if(orderType == EOrderType.Buy)
-            orders = _buyOrders[itemAddress];
+            orders = _buyOrders[token0Address][token1Address];
         else
-            orders = _sellOrders[itemAddress];
+            orders = _sellOrders[token0Address][token1Address];
         if(orders.length == 0)
             return orders;
         
@@ -155,10 +142,10 @@ contract AvatarArtOrderBook is Runnable, IAvatarArtExchange{
     }
     
     /**
-     * @dev Get selling orders that can be filled with `price` of `itemAddress`
+     * @dev Get selling orders that can be filled with `price` of `token0Address`
      */ 
-    function getOpenSellOrdersForPrice(address itemAddress, uint256 price) public view returns(Order[] memory){
-        Order[] memory orders = _sellOrders[itemAddress];
+    function getOpenSellOrdersForPrice(address token0Address, address token1Address, uint256 price) public view returns(Order[] memory){
+        Order[] memory orders = _sellOrders[token0Address][token1Address];
         if(orders.length == 0)
             return orders;
         
@@ -180,34 +167,20 @@ contract AvatarArtOrderBook is Runnable, IAvatarArtExchange{
         return result;
     }
     
-    function getFilledHistories(address itemAddress) public view returns(FilledHistory[] memory){
-        return _filledHistories[itemAddress];
-    }
-    
-    function isTradable(address itemAddress) public view returns(bool){
-        return _isTradableItems[itemAddress];
-    }
-    
-    function setBnuToken(address newAddress) public onlyOwner{
-        require(newAddress != address(0),"Zero address");
-        _bnuToken = IERC20(newAddress);
-    }
-    
     function setFee(uint256 fee) public onlyOwner{
         _fee = fee;
     }
     
     function setGeneratorAddress(address newAddress) public onlyOwner{
-        require(newAddress != address(0),"Zero address");
+        require(newAddress != address(0), "Zero address");
         _generatorAddress = newAddress;
     }
     
    /**
-     * @dev Allow or disallow `itemAddress` to be traded on AvatarArtOrderBook
+     * @dev Allow or disallow `token0Address` to be traded on AvatarArtOrderBook
     */
-    function toogleTradableStatus(address itemAddress) public override onlyOwner returns(bool){
-        _isTradableItems[itemAddress] = !isTradable(itemAddress);
-        
+    function toogleTradableStatus(address token0Address, address token1Address) public override onlyOwner returns(bool){
+        _isTradable[token0Address][token1Address] = !_isTradable[token0Address][token1Address];
         return true;
     }
     
@@ -218,8 +191,8 @@ contract AvatarArtOrderBook is Runnable, IAvatarArtExchange{
      *    1. Validate requirements
      *    2. Process buy order 
      */ 
-    function buy(address itemAddress, uint256 price, uint256 quantity) public override isRunning returns(bool){
-        require(isTradable(itemAddress), "Can not tradable");
+    function buy(address token0Address, address token1Address, uint256 price, uint256 quantity) public override isRunning returns(bool){
+        require(_isTradable[token0Address][token1Address], "Can not tradable");
         require(price > 0 && quantity > 0, "Zero input");
         
         uint256 matchedQuantity = 0;
@@ -239,7 +212,7 @@ contract AvatarArtOrderBook is Runnable, IAvatarArtExchange{
         uint256 totalPaidAmount = 0;
         
         //Get all open sell orders that are suitable for `price`
-        Order[] memory matchedOrders = getOpenSellOrdersForPrice(itemAddress, price);
+        Order[] memory matchedOrders = getOpenSellOrdersForPrice(token0Address, token1Address, price);
         if (matchedOrders.length > 0){
             matchedQuantity = 0;
             uint256 changePrice = 0;
@@ -253,7 +226,7 @@ contract AvatarArtOrderBook is Runnable, IAvatarArtExchange{
                     matchedQuantity = quantity;
                     
                     //Update matchedOrder matched quantity
-                    _increaseFilledQuantity(itemAddress, EOrderType.Sell, matchedOrder.orderId, needToMatchedQuantity);
+                    _increaseFilledQuantity(token0Address, token1Address, EOrderType.Sell, matchedOrder.orderId, needToMatchedQuantity);
                     
                     currentFilledQuantity = needToMatchedQuantity;
                     needToMatchedQuantity = 0;
@@ -265,31 +238,31 @@ contract AvatarArtOrderBook is Runnable, IAvatarArtExchange{
                     currentFilledQuantity = matchedOrderRemainQuantity;
 
                     //Update matchedOrder to completed
-                    _updateOrderToBeFilled(itemAddress, matchedOrder.orderId, EOrderType.Sell);
+                    _updateOrderToBeFilled(token0Address, token1Address, matchedOrder.orderId, EOrderType.Sell);
                 }
 
                 if (matchedOrder.price != changePrice)
                 {
                     changePrice = matchedOrder.price;
-                    emit PriceChanged(itemAddress, changePrice, _now());
+                    emit PriceChanged(token0Address, token1Address, changePrice, _now());
                 }
 
                 totalPaidAmount += currentFilledQuantity * matchedOrder.price;
                 
                 //Create matched order
-                _filledHistories[itemAddress].push(FilledHistory({
+                _filledHistories[token0Address][token1Address].push(FilledHistory({
                         buyOrderId: order.orderId,
                         sellOrderId: matchedOrder.orderId,
                         price: matchedOrder.price,
                         quantity: currentFilledQuantity}));
 
                 //Increase buy user ticker 1 balance
-                IERC20(itemAddress).transfer(_msgSender(), currentFilledQuantity * (1 - _fee / 100 / MULTIPLIER));
+                IERC20(token0Address).transfer(_msgSender(), currentFilledQuantity * (1 - _fee / 100 / MULTIPLIER));
 
                 //Increase sell user ticker2 balance
-                _bnuToken.transfer(matchedOrder.owner, currentFilledQuantity * matchedOrder.price * (1 - matchedOrder.fee / 100 / MULTIPLIER));
+                IERC20(token1Address).transfer(matchedOrder.owner, currentFilledQuantity * matchedOrder.price * (1 - matchedOrder.fee / 100 / MULTIPLIER));
 
-                emit RefreshUserOrders(itemAddress, matchedOrder.owner);
+                emit RefreshUserOrders(token0Address, token1Address, matchedOrder.owner);
                 
                 if (needToMatchedQuantity == 0)
                     break;
@@ -298,7 +271,7 @@ contract AvatarArtOrderBook is Runnable, IAvatarArtExchange{
 
         totalPaidAmount += price * (quantity - matchedQuantity);
         if(totalPaidAmount > 0)
-            _bnuToken.transferFrom(_msgSender(), address(this), totalPaidAmount);
+            IERC20(token1Address).transferFrom(_msgSender(), address(this), totalPaidAmount);
 
         //Create order
         order.filledQuantity = matchedQuantity;
@@ -306,27 +279,27 @@ contract AvatarArtOrderBook is Runnable, IAvatarArtExchange{
             order.status = EOrderStatus.Open;
         else
             order.status = EOrderStatus.Filled;
-        _buyOrders[itemAddress].push(order);
+        _buyOrders[token0Address][token1Address].push(order);
         
-        emit RefreshUserOrders(itemAddress, _msgSender());
+        emit RefreshUserOrders(token0Address, token1Address, _msgSender());
         
         //Event for all user to refresh buy order
-        emit RefreshOpenOrders(itemAddress, EOrderType.Buy);
+        emit RefreshOpenOrders(token0Address, token1Address, EOrderType.Buy);
         
         //If has matchedOrders, emit event for refresh sell order
         if (matchedOrders.length > 0)
-            emit RefreshOpenOrders(itemAddress, EOrderType.Sell);
+            emit RefreshOpenOrders(token0Address, token1Address, EOrderType.Sell);
         
         _buyOrderIndex++;
-        emit OrderCreated(_now(), _msgSender(), itemAddress, EOrderType.Buy, price, quantity);
+        emit OrderCreated(_now(), _msgSender(), token0Address, token1Address, EOrderType.Buy, price, quantity);
         return true;
     }
     
     /**
-     * @dev Sell `itemAddress` with `price` and `amount`
+     * @dev Sell `token0Address` with `price` and `amount`
      */ 
-    function sell(address itemAddress, uint256 price, uint256 quantity) public override isRunning returns(bool){
-        require(isTradable(itemAddress), "Can not tradable");
+    function sell(address token0Address, address token1Address, uint256 price, uint256 quantity) public override isRunning returns(bool){
+        require(_isTradable[token0Address][token1Address], "Can not tradable");
         require(price > 0 && quantity > 0, "Zero input");
         
         uint256 matchedQuantity = 0;
@@ -343,8 +316,8 @@ contract AvatarArtOrderBook is Runnable, IAvatarArtExchange{
             status: EOrderStatus.Open
         });
         
-        IERC20(itemAddress).transferFrom(_msgSender(), address(this), quantity);
-        Order[] memory matchedOrders = getOpenBuyOrdersForPrice(itemAddress, price);
+        IERC20(token0Address).transferFrom(_msgSender(), address(this), quantity);
+        Order[] memory matchedOrders = getOpenBuyOrdersForPrice(token0Address, token1Address, price);
         if (matchedOrders.length > 0){
             matchedQuantity = 0;
             uint256 changedPrice = 0;
@@ -358,7 +331,7 @@ contract AvatarArtOrderBook is Runnable, IAvatarArtExchange{
                     matchedQuantity = quantity;
                     
                      //Update matchedOrder matched quantity
-                    _increaseFilledQuantity(itemAddress, EOrderType.Buy, matchedOrder.orderId, needToMatchedQuantity);
+                    _increaseFilledQuantity(token0Address, token1Address, EOrderType.Buy, matchedOrder.orderId, needToMatchedQuantity);
 
                     currentMatchedQuantity = needToMatchedQuantity;
                     needToMatchedQuantity = 0;
@@ -370,11 +343,11 @@ contract AvatarArtOrderBook is Runnable, IAvatarArtExchange{
                     currentMatchedQuantity = matchedOrderRemainQuantity;
 
                     //Update matchedOrder to completed
-                    _updateOrderToBeFilled(itemAddress, matchedOrder.orderId, EOrderType.Buy);
+                    _updateOrderToBeFilled(token0Address, token1Address, matchedOrder.orderId, EOrderType.Buy);
                 }
                 
                  //Create matched order
-                _filledHistories[itemAddress].push(FilledHistory({
+                _filledHistories[token0Address][token1Address].push(FilledHistory({
                     buyOrderId: matchedOrder.orderId,
                     sellOrderId: order.orderId,
                     price: matchedOrder.price,
@@ -382,15 +355,15 @@ contract AvatarArtOrderBook is Runnable, IAvatarArtExchange{
                 }));
                
                 if (matchedOrder.price != changedPrice)
-                    emit PriceChanged(itemAddress, changedPrice, _now());
+                    emit PriceChanged(token0Address, token1Address, changedPrice, _now());
 
                 //Increase buy user ticker 1 balance
-                IERC20(itemAddress).transfer(matchedOrder.owner, currentMatchedQuantity * (1 - matchedOrder.fee / 100 / MULTIPLIER));
+                IERC20(token0Address).transfer(matchedOrder.owner, currentMatchedQuantity * (1 - matchedOrder.fee / 100 / MULTIPLIER));
 
                 //Increase sell user ticker2 balance
-                _bnuToken.transfer(_msgSender(), currentMatchedQuantity * matchedOrder.price * (1 - _fee / 100 / MULTIPLIER));
+                IERC20(token1Address).transfer(_msgSender(), currentMatchedQuantity * matchedOrder.price * (1 - _fee / 100 / MULTIPLIER));
 
-                emit RefreshUserOrders(itemAddress, matchedOrder.owner);
+                emit RefreshUserOrders(token0Address, token1Address, matchedOrder.owner);
 
                 if (needToMatchedQuantity == 0)
                     break;
@@ -403,47 +376,47 @@ contract AvatarArtOrderBook is Runnable, IAvatarArtExchange{
         else
             order.status = EOrderStatus.Filled;
        
-        _sellOrders[itemAddress].push(order);
+        _sellOrders[token0Address][token1Address].push(order);
         
-        emit RefreshUserOrders(itemAddress, _msgSender());
+        emit RefreshUserOrders(token0Address, token1Address, _msgSender());
         
         //Event for all user to refresh buy order
-        emit RefreshOpenOrders(itemAddress, EOrderType.Sell);
+        emit RefreshOpenOrders(token0Address, token1Address, EOrderType.Sell);
         
         //If has matchedOrders, emit event for refresh sell order
         if (matchedOrders.length > 0)
-            emit RefreshOpenOrders(itemAddress, EOrderType.Buy);
+            emit RefreshOpenOrders(token0Address, token1Address, EOrderType.Buy);
 
         _sellOrderIndex++;
-        emit OrderCreated(_now(), _msgSender(), itemAddress, EOrderType.Sell, price, quantity);
+        emit OrderCreated(_now(), _msgSender(), token0Address, token1Address, EOrderType.Sell, price, quantity);
         return true;
     }
     
     /**
-     * @dev Cancel an open trading order for `itemAddress` by `orderId`
+     * @dev Cancel an open trading order for `token0Address` by `orderId`
      */ 
-    function cancel(address itemAddress, uint256 orderId, uint256 orderType) public override isRunning returns(bool){
+    function cancel(address token0Address, address token1Address, uint256 orderId, uint256 orderType) public override isRunning returns(bool){
         EOrderType eOrderType = EOrderType(orderType);
         require(eOrderType == EOrderType.Buy || eOrderType == EOrderType.Sell,"Invalid order type");
         
         if(eOrderType == EOrderType.Buy)
-            return _cancelBuyOrder(itemAddress, orderId);
+            return _cancelBuyOrder(token0Address, token1Address, orderId);
         else
-            return _cancelSellOrder(itemAddress, orderId);
+            return _cancelSellOrder(token0Address, token1Address, orderId);
     }
     
     /**
      * @dev Cancel buy order
      */ 
-    function _cancelBuyOrder(address itemAddress, uint256 orderId) internal returns(bool){
-        for(uint256 index = 0; index < _buyOrders[itemAddress].length; index++){
-            Order storage order = _buyOrders[itemAddress][index];
+    function _cancelBuyOrder(address token0Address, address token1Address, uint256 orderId) internal returns(bool){
+        for(uint256 index = 0; index < _buyOrders[token0Address][token1Address].length; index++){
+            Order storage order = _buyOrders[token0Address][token1Address][index];
             if(order.orderId == orderId){
                 if(order.status != EOrderStatus.Open)
                     revert("Order is not open");
                 
                 order.status = EOrderStatus.Canceled;
-                _bnuToken.transfer(order.owner, (order.quantity - order.filledQuantity) * order.price);
+                IERC20(token1Address).transfer(order.owner, (order.quantity - order.filledQuantity) * order.price);
                 break;
             }
         }
@@ -453,15 +426,15 @@ contract AvatarArtOrderBook is Runnable, IAvatarArtExchange{
     /**
      * @dev Cancel sell order
      */ 
-    function _cancelSellOrder(address itemAddress, uint256 orderId) internal returns(bool){
-        for(uint256 index = 0; index < _sellOrders[itemAddress].length; index++){
-            Order storage order = _sellOrders[itemAddress][index];
+    function _cancelSellOrder(address token0Address, address token1Address, uint256 orderId) internal returns(bool){
+        for(uint256 index = 0; index < _sellOrders[token0Address][token1Address].length; index++){
+            Order storage order = _sellOrders[token0Address][token1Address][index];
             if(order.orderId == orderId){
                 if(order.status != EOrderStatus.Open)
                     revert("Order is not open");
                 
                 order.status = EOrderStatus.Canceled;
-                IERC20(itemAddress).transfer(order.owner, order.quantity - order.filledQuantity);
+                IERC20(token0Address).transfer(order.owner, order.quantity - order.filledQuantity);
                 break;
             }
         }
@@ -471,18 +444,18 @@ contract AvatarArtOrderBook is Runnable, IAvatarArtExchange{
     /**
      * @dev Increase filled quantity of specific order
      */ 
-    function _increaseFilledQuantity(address itemAddress, EOrderType orderType, uint256 orderId, uint256 quantity) internal {
+    function _increaseFilledQuantity(address token0Address, address token1Address, EOrderType orderType, uint256 orderId, uint256 quantity) internal {
         if(orderType == EOrderType.Buy){
-            for(uint256 index = 0; index < _buyOrders[itemAddress].length; index++){
-                Order storage order = _buyOrders[itemAddress][index];
+            for(uint256 index = 0; index < _buyOrders[token0Address][token1Address].length; index++){
+                Order storage order = _buyOrders[token0Address][token1Address][index];
                 if(order.orderId == orderId){
                     order.filledQuantity += quantity;
                     break;
                 }
             }
         }else{
-            for(uint256 index = 0; index < _sellOrders[itemAddress].length; index++){
-                Order storage order = _buyOrders[itemAddress][index];
+            for(uint256 index = 0; index < _sellOrders[token0Address][token1Address].length; index++){
+                Order storage order = _buyOrders[token0Address][token1Address][index];
                 if(order.orderId == orderId){
                     order.filledQuantity += quantity;
                     break;
@@ -494,10 +467,10 @@ contract AvatarArtOrderBook is Runnable, IAvatarArtExchange{
     /**
      * @dev Update the order is filled all
      */ 
-    function _updateOrderToBeFilled(address itemAddress, uint256 orderId, EOrderType orderType) internal{
+    function _updateOrderToBeFilled(address token0Address, address token1Address, uint256 orderId, EOrderType orderType) internal{
         if(orderType == EOrderType.Buy){
-            for(uint256 index = 0; index < _buyOrders[itemAddress].length; index++){
-                Order storage order = _buyOrders[itemAddress][index];
+            for(uint256 index = 0; index < _buyOrders[token0Address][token1Address].length; index++){
+                Order storage order = _buyOrders[token0Address][token1Address][index];
                 if(order.orderId == orderId){
                     order.filledQuantity == order.quantity;
                     order.status = EOrderStatus.Filled;
@@ -505,8 +478,8 @@ contract AvatarArtOrderBook is Runnable, IAvatarArtExchange{
                 }
             }
         }else{
-            for(uint256 index = 0; index < _sellOrders[itemAddress].length; index++){
-                Order storage order = _buyOrders[itemAddress][index];
+            for(uint256 index = 0; index < _sellOrders[token0Address][token1Address].length; index++){
+                Order storage order = _buyOrders[token0Address][token1Address][index];
                 if(order.orderId == orderId){
                     order.filledQuantity == order.quantity;
                     order.status = EOrderStatus.Filled;
@@ -516,8 +489,8 @@ contract AvatarArtOrderBook is Runnable, IAvatarArtExchange{
         }
     }
     
-    event OrderCreated(uint256 time, address indexed account, address itemAddress, EOrderType orderType, uint256 price, uint256 quantity);
-    event PriceChanged(address itemAddress, uint256 price, uint256 time);
-    event RefreshUserOrders(address itemAddress, address account);
-    event RefreshOpenOrders(address itemAddress, EOrderType orderType);
+    event OrderCreated(uint256 time, address indexed account, address token0Address, address token1Address, EOrderType orderType, uint256 price, uint256 quantity);
+    event PriceChanged(address token0Address, address token1Address, uint256 price, uint256 time);
+    event RefreshUserOrders(address token0Address, address token1Address, address account);
+    event RefreshOpenOrders(address token0Address, address token1Address, EOrderType orderType);
 }

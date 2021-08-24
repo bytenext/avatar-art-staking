@@ -4,22 +4,22 @@ pragma solidity ^0.8.0;
 
 interface IAvatarArtExchange{
     /**
-     * @dev Allow or disallow `itemAddress` to be traded on AvatarArtOrderBook
+     * @dev Allow or disallow `token0Address` to be traded on AvatarArtOrderBook
     */
-    function toogleTradableStatus(address itemAddress) external returns(bool);
+    function toogleTradableStatus(address token0Address, address token1Address) external returns(bool);
     
     /**
-     * @dev Buy `itemAddress` with `price` and `amount`
+     * @dev Buy `token0Address` with `price` and `amount`
      */ 
-    function buy(address itemAddress, uint256 price, uint256 amount) external returns(bool);
+    function buy(address token0Address, address token1Address, uint256 price, uint256 amount) external returns(bool);
     
     /**
-     * @dev Sell `itemAddress` with `price` and `amount`
+     * @dev Sell `token0Address` with `price` and `amount`
      */ 
-    function sell(address itemAddress, uint256 price, uint256 amount) external returns(bool);
+    function sell(address token0Address, address token1Address, uint256 price, uint256 amount) external returns(bool);
     
     /**
-     * @dev Cancel an open trading order for `itemAddress` by `orderId`
+     * @dev Cancel an open trading order for `token0Address` by `orderId`
      */ 
-    function cancel(address itemAddress, uint256 orderId, uint256 orderType) external returns(bool);
+    function cancel(address token0Address, address token1Address, uint256 orderId, uint256 orderType) external returns(bool);
 }
