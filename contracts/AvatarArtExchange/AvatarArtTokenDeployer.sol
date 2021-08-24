@@ -3,12 +3,12 @@
 pragma solidity ^0.8.0;
 
 import "./AvatarArtERC20.sol";
-import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
-import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import ".././core/Ownable.sol";
 import ".././interfaces/IAvatarArtExchange.sol";
+import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 
-contract AvatarArtTokenDeployer is Ownable, IERC721Receiver{
+contract AvatarArtTokenDeployer is Ownable, IERC721Receiver {
     struct TokenInfo{
         string name;
         string symbol;
@@ -93,7 +93,6 @@ contract AvatarArtTokenDeployer is Ownable, IERC721Receiver{
         _avatarArtNft.safeTransferFrom(address(this), receipent, tokenId);
     }
 
-        
     function onERC721Received(address operator, address from, uint256 tokenId, bytes calldata data) external view override returns (bytes4){
         return bytes4(keccak256("onERC721Received(address,address,uint256,bytes)"));
     }
