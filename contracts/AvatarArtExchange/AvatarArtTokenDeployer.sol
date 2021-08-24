@@ -5,6 +5,7 @@ pragma solidity ^0.8.0;
 import "./AvatarArtERC20.sol";
 import "../AvatarArtBase.sol";
 import ".././core/Ownable.sol";
+import ".././interfaces/IAvatarArtExchange.sol";
 
 contract AvatarArtTokenDeployer is AvatarArtBase{
     struct TokenInfo{
@@ -13,15 +14,18 @@ contract AvatarArtTokenDeployer is AvatarArtBase{
         uint256 totalSupply;
         address tokenOwner;
         address tokenAddress;
+        address pairToAddress;
         bool isApproved;
     }
 
     IERC721 public _avatarArtNft;
+    IAvatarArtExchange public _avatarArtExchange;
 
     mapping(uint256 => TokenInfo) public _tokenInfos;
 
-    constructor(address avatarNftAddress){
+    constructor(address avatarNftAddress, address exchangeAddress){
         _avatarArtNft = IERC721(avatarNftAddress);
+        _avatarArtExchange = IAvatarArtExchange(exchangeAddress);
     }
 
     function setAvatarArtNft(address avatarNftAddress) external onlyOwner {
@@ -33,7 +37,8 @@ contract AvatarArtTokenDeployer is AvatarArtBase{
         string memory name,
         string memory symbol,
         uint256 totalSupply,
-        address tokenOwner) external onlyOwner{
+        address tokenOwner,
+        address pairToAddress) external onlyOwner{
         require(tokenOwner != address(0), "Token owner is address zero");
 
         _tokenInfos[tokenId] = TokenInfo({
@@ -42,6 +47,7 @@ contract AvatarArtTokenDeployer is AvatarArtBase{
             totalSupply: totalSupply,
             tokenOwner: tokenOwner,
             tokenAddress: address(0),
+            pairToAddress: pairToAddress,
             isApproved: true
         });
     }
@@ -54,6 +60,9 @@ contract AvatarArtTokenDeployer is AvatarArtBase{
 
         AvatarArtERC20 deployedContract = new AvatarArtERC20(tokenInfo.name, tokenInfo.symbol, tokenInfo.totalSupply, tokenInfo.tokenOwner, _owner);
         tokenInfo.tokenAddress = address(deployedContract);
+
+        //Allow to trade this pair
+        require(_avatarArtExchange.toogleTradableStatus(tokenInfo.tokenAddress, tokenInfo.pairToAddress));
         
         emit NftTokenDeployed(tokenInfo.tokenAddress, _msgSender());
         return tokenInfo.tokenAddress;

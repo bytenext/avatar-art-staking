@@ -7,6 +7,10 @@ import ".././core/Runnable.sol";
 pragma solidity ^0.8.0;
 
 contract AvatarArtOrderBook is Runnable, IAvatarArtExchange{
+    modifier onlyAdmin{
+        require(_msgSender() == deployerAddress || _msgSender() == _owner, "Forbidden");
+        _;
+    }
     enum EOrderType{
         Buy, 
         Sell
@@ -32,7 +36,7 @@ contract AvatarArtOrderBook is Runnable, IAvatarArtExchange{
     uint256 constant public MULTIPLIER = 1000;
     
     //Address of contract that will generate token for specific NFT
-    address public _generatorAddress;
+    address public deployerAddress;
     
     uint256 public _fee;
     uint256 private _buyOrderIndex = 1;
@@ -46,6 +50,10 @@ contract AvatarArtOrderBook is Runnable, IAvatarArtExchange{
     mapping(address => mapping(address => Order[])) public _sellOrders;
     
     uint256 private _feeTotal = 0;
+    
+    constructor(uint256 fee){
+        _fee = fee;
+    }
     
     /**
      * @dev Get all open orders by `token0Address`
@@ -164,15 +172,15 @@ contract AvatarArtOrderBook is Runnable, IAvatarArtExchange{
         _fee = fee;
     }
     
-    function setGeneratorAddress(address newAddress) public onlyOwner{
+    function setDeployerAddress(address newAddress) public onlyOwner{
         require(newAddress != address(0), "Zero address");
-        _generatorAddress = newAddress;
+        deployerAddress = newAddress;
     }
     
    /**
      * @dev Allow or disallow `token0Address` to be traded on AvatarArtOrderBook
     */
-    function toogleTradableStatus(address token0Address, address token1Address) public override onlyOwner returns(bool){
+    function toogleTradableStatus(address token0Address, address token1Address) public override onlyAdmin returns(bool){
         _isTradable[token0Address][token1Address] = !_isTradable[token0Address][token1Address];
         return true;
     }
