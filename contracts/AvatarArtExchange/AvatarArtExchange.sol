@@ -29,13 +29,6 @@ contract AvatarArtOrderBook is Runnable, IAvatarArtExchange{
         uint256 fee;
     }
     
-    struct FilledHistory{
-        uint256 buyOrderId;
-        uint256 sellOrderId;
-        uint256 price;
-        uint256 quantity;
-    }
-    
     uint256 constant public MULTIPLIER = 1000;
     
     //Address of contract that will generate token for specific NFT
@@ -52,7 +45,7 @@ contract AvatarArtOrderBook is Runnable, IAvatarArtExchange{
     mapping(address => mapping(address => Order[])) public _buyOrders;
     mapping(address => mapping(address => Order[])) public _sellOrders;
     
-    mapping(address => mapping(address => FilledHistory[])) public _filledHistories;
+    uint256 private _feeTotal = 0;
     
     /**
      * @dev Get all open orders by `token0Address`
@@ -210,7 +203,6 @@ contract AvatarArtOrderBook is Runnable, IAvatarArtExchange{
         });
         
         uint256 totalPaidAmount = 0;
-        
         //Get all open sell orders that are suitable for `price`
         Order[] memory matchedOrders = getOpenSellOrdersForPrice(token0Address, token1Address, price);
         if (matchedOrders.length > 0){
@@ -250,16 +242,13 @@ contract AvatarArtOrderBook is Runnable, IAvatarArtExchange{
                 totalPaidAmount += currentFilledQuantity * matchedOrder.price;
                 
                 //Create matched order
-                _filledHistories[token0Address][token1Address].push(FilledHistory({
-                        buyOrderId: order.orderId,
-                        sellOrderId: matchedOrder.orderId,
-                        price: matchedOrder.price,
-                        quantity: currentFilledQuantity}));
+                emit OrderFilled(token0Address, token1Address, order.orderId, matchedOrder.orderId, matchedOrder.price, currentFilledQuantity, _now());
 
-                //Increase buy user ticker 1 balance
+                //Increase buy user token0 balance
+                _feeTotal += currentFilledQuantity * _fee / 100 / MULTIPLIER;
                 IERC20(token0Address).transfer(_msgSender(), currentFilledQuantity * (1 - _fee / 100 / MULTIPLIER));
 
-                //Increase sell user ticker2 balance
+                //Increase sell user token1 balance
                 IERC20(token1Address).transfer(matchedOrder.owner, currentFilledQuantity * matchedOrder.price * (1 - matchedOrder.fee / 100 / MULTIPLIER));
 
                 emit RefreshUserOrders(token0Address, token1Address, matchedOrder.owner);
@@ -280,6 +269,11 @@ contract AvatarArtOrderBook is Runnable, IAvatarArtExchange{
         else
             order.status = EOrderStatus.Filled;
         _buyOrders[token0Address][token1Address].push(order);
+        
+        if(_feeTotal > 0){
+            IERC20(token0Address).transfer(_owner, _feeTotal);
+            _feeTotal = 0;
+        }
         
         emit RefreshUserOrders(token0Address, token1Address, _msgSender());
         
@@ -346,21 +340,16 @@ contract AvatarArtOrderBook is Runnable, IAvatarArtExchange{
                     _updateOrderToBeFilled(token0Address, token1Address, matchedOrder.orderId, EOrderType.Buy);
                 }
                 
-                 //Create matched order
-                _filledHistories[token0Address][token1Address].push(FilledHistory({
-                    buyOrderId: matchedOrder.orderId,
-                    sellOrderId: order.orderId,
-                    price: matchedOrder.price,
-                    quantity: currentMatchedQuantity
-                }));
+                emit OrderFilled(token0Address, token1Address, matchedOrder.orderId, order.orderId, matchedOrder.price, currentMatchedQuantity, _now());
                
                 if (matchedOrder.price != changedPrice)
                     emit PriceChanged(token0Address, token1Address, changedPrice, _now());
 
-                //Increase buy user ticker 1 balance
+                //Increase buy user token0 balance
                 IERC20(token0Address).transfer(matchedOrder.owner, currentMatchedQuantity * (1 - matchedOrder.fee / 100 / MULTIPLIER));
 
-                //Increase sell user ticker2 balance
+                //Increase sell user token1 balance
+                _feeTotal += currentMatchedQuantity * matchedOrder.price * _fee / 100 / MULTIPLIER;
                 IERC20(token1Address).transfer(_msgSender(), currentMatchedQuantity * matchedOrder.price * (1 - _fee / 100 / MULTIPLIER));
 
                 emit RefreshUserOrders(token0Address, token1Address, matchedOrder.owner);
@@ -377,6 +366,11 @@ contract AvatarArtOrderBook is Runnable, IAvatarArtExchange{
             order.status = EOrderStatus.Filled;
        
         _sellOrders[token0Address][token1Address].push(order);
+        
+        if(_feeTotal > 0){
+            IERC20(token1Address).transfer(_owner, _feeTotal);
+            _feeTotal = 0;
+        }
         
         emit RefreshUserOrders(token0Address, token1Address, _msgSender());
         
@@ -493,4 +487,5 @@ contract AvatarArtOrderBook is Runnable, IAvatarArtExchange{
     event PriceChanged(address token0Address, address token1Address, uint256 price, uint256 time);
     event RefreshUserOrders(address token0Address, address token1Address, address account);
     event RefreshOpenOrders(address token0Address, address token1Address, EOrderType orderType);
+    event OrderFilled(address token0Address, address token1Address, uint256 buyOrderId, uint256 sellOrderId, uint256 price, uint256 quantity, uint256 time);
 }
