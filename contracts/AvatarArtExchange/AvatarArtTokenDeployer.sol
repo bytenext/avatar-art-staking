@@ -12,6 +12,7 @@ contract AvatarArtTokenDeployer is AvatarArtBase{
         string symbol;
         uint256 totalSupply;
         address tokenOwner;
+        address tokenAddress;
         bool isApproved;
     }
 
@@ -40,6 +41,7 @@ contract AvatarArtTokenDeployer is AvatarArtBase{
             symbol: symbol,
             totalSupply: totalSupply,
             tokenOwner: tokenOwner,
+            tokenAddress: address(0),
             isApproved: true
         });
     }
@@ -51,10 +53,30 @@ contract AvatarArtTokenDeployer is AvatarArtBase{
         _avatarArtNft.safeTransferFrom(tokenInfo.tokenOwner, address(this), tokenId);
 
         AvatarArtERC20 deployedContract = new AvatarArtERC20(tokenInfo.name, tokenInfo.symbol, tokenInfo.totalSupply, tokenInfo.tokenOwner, _owner);
-        address newTokenAddress = address(deployedContract);
+        tokenInfo.tokenAddress = address(deployedContract);
         
-        emit NftTokenDeployed(newTokenAddress, _msgSender());
-        return newTokenAddress;
+        emit NftTokenDeployed(tokenInfo.tokenAddress, _msgSender());
+        return tokenInfo.tokenAddress;
+    }
+
+    function burnToken(uint256 tokenId) external{
+        TokenInfo storage tokenInfo = _tokenInfos[tokenId];
+        require(tokenInfo.tokenAddress != address(0));
+
+        IERC20 token = IERC20(tokenInfo.tokenAddress);
+        require(token.balanceOf(_msgSender()) == token.totalSupply());
+
+        token.transferFrom(_msgSender(), address(0), token.totalSupply());
+        _avatarArtNft.safeTransferFrom(address(this), _msgSender(), tokenId);
+
+        tokenInfo.name = "";
+        tokenInfo.symbol = "";
+        tokenInfo.totalSupply = 0;
+        tokenInfo.tokenAddress = address(0);
+        tokenInfo.tokenOwner = address(0);
+        tokenInfo.isApproved = false;
+
+        emit NftTokenBurned(_msgSender(), tokenId);
     }
 
     function withdrawNft(uint256 tokenId, address receipent) external onlyOwner{
@@ -62,4 +84,5 @@ contract AvatarArtTokenDeployer is AvatarArtBase{
     }
     
     event NftTokenDeployed(address contractAddress, address owner);
+    event NftTokenBurned(address owner, uint256 tokenId);
 }
