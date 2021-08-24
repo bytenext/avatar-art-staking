@@ -414,11 +414,12 @@ contract AvatarArtOrderBook is Runnable, IAvatarArtExchange{
         for(uint256 index = 0; index < _buyOrders[token0Address][token1Address].length; index++){
             Order storage order = _buyOrders[token0Address][token1Address][index];
             if(order.orderId == orderId){
-                if(order.status != EOrderStatus.Open)
-                    revert("Order is not open");
+                require(order.owner == _msgSender(), "Forbidden");
+                require(order.status == EOrderStatus.Open, "Order is not open");
                 
                 order.status = EOrderStatus.Canceled;
                 IERC20(token1Address).transfer(order.owner, (order.quantity - order.filledQuantity) * order.price);
+                emit OrderCanceled(_now(), orderId);
                 break;
             }
         }
@@ -432,11 +433,12 @@ contract AvatarArtOrderBook is Runnable, IAvatarArtExchange{
         for(uint256 index = 0; index < _sellOrders[token0Address][token1Address].length; index++){
             Order storage order = _sellOrders[token0Address][token1Address][index];
             if(order.orderId == orderId){
-                if(order.status != EOrderStatus.Open)
-                    revert("Order is not open");
+                require(order.owner == _msgSender(), "Forbidden");
+                require(order.status == EOrderStatus.Open, "Order is not open");
                 
                 order.status = EOrderStatus.Canceled;
                 IERC20(token0Address).transfer(order.owner, order.quantity - order.filledQuantity);
+                emit OrderCanceled(_now(), orderId);
                 break;
             }
         }
@@ -492,6 +494,7 @@ contract AvatarArtOrderBook is Runnable, IAvatarArtExchange{
     }
     
     event OrderCreated(uint256 time, address indexed account, address token0Address, address token1Address, EOrderType orderType, uint256 price, uint256 quantity);
+    event OrderCanceled(uint256 time, uint256 orderId);
     event PriceChanged(address token0Address, address token1Address, uint256 price, uint256 time);
     event RefreshUserOrders(address token0Address, address token1Address, address account);
     event RefreshOpenOrders(address token0Address, address token1Address, EOrderType orderType);
