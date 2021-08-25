@@ -6,7 +6,6 @@ import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "./AvatarArtERC20.sol";
 import ".././core/Ownable.sol";
-import ".././interfaces/IAvatarArtExchange.sol";
 
 contract AvatarArtTokenDeployer is Ownable, IERC721Receiver {
     struct TokenInfo{
@@ -20,13 +19,11 @@ contract AvatarArtTokenDeployer is Ownable, IERC721Receiver {
     }
 
     IERC721 public _avatarArtNft;
-    IAvatarArtExchange public _avatarArtExchange;
 
     mapping(uint256 => TokenInfo) public _tokenInfos;
 
-    constructor(address avatarNftAddress, address exchangeAddress){
+    constructor(address avatarNftAddress){
         _avatarArtNft = IERC721(avatarNftAddress);
-        _avatarArtExchange = IAvatarArtExchange(exchangeAddress);
     }
 
     function setAvatarArtNft(address avatarNftAddress) external onlyOwner {
@@ -61,9 +58,6 @@ contract AvatarArtTokenDeployer is Ownable, IERC721Receiver {
 
         AvatarArtERC20 deployedContract = new AvatarArtERC20(tokenInfo.name, tokenInfo.symbol, tokenInfo.totalSupply, tokenInfo.tokenOwner, _owner);
         tokenInfo.tokenAddress = address(deployedContract);
-
-        //Allow to trade this pair
-        require(_avatarArtExchange.toogleTradableStatus(tokenInfo.tokenAddress, tokenInfo.pairToAddress));
         
         emit NftTokenDeployed(tokenInfo.tokenAddress, tokenInfo.name, tokenInfo.symbol, tokenInfo.totalSupply, tokenInfo.pairToAddress, _msgSender());
         return tokenInfo.tokenAddress;
