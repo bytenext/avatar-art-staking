@@ -2,11 +2,11 @@
 
 pragma solidity ^0.8.0;
 
+import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "./AvatarArtERC20.sol";
 import ".././core/Ownable.sol";
 import ".././interfaces/IAvatarArtExchange.sol";
-import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
-import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 
 contract AvatarArtTokenDeployer is Ownable, IERC721Receiver {
     struct TokenInfo{
@@ -65,7 +65,7 @@ contract AvatarArtTokenDeployer is Ownable, IERC721Receiver {
         //Allow to trade this pair
         require(_avatarArtExchange.toogleTradableStatus(tokenInfo.tokenAddress, tokenInfo.pairToAddress));
         
-        emit NftTokenDeployed(tokenInfo.tokenAddress, _msgSender());
+        emit NftTokenDeployed(tokenInfo.tokenAddress, tokenInfo.name, tokenInfo.symbol, tokenInfo.totalSupply, tokenInfo.pairToAddress, _msgSender());
         return tokenInfo.tokenAddress;
     }
 
@@ -97,6 +97,6 @@ contract AvatarArtTokenDeployer is Ownable, IERC721Receiver {
         return bytes4(keccak256("onERC721Received(address,address,uint256,bytes)"));
     }
     
-    event NftTokenDeployed(address contractAddress, address owner);
+    event NftTokenDeployed(address tokenAddress, string name, string symbol, uint256 totalSupply, address pairToAddress, address balanceAddress);
     event NftTokenBurned(address owner, uint256 tokenId);
 }

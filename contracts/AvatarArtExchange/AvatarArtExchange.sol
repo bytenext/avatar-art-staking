@@ -8,7 +8,7 @@ pragma solidity ^0.8.0;
 
 contract AvatarArtExchange is Runnable, IAvatarArtExchange{
     modifier onlyAdmin{
-        require(_msgSender() == deployerAddress || _msgSender() == _owner, "Forbidden");
+        require(_msgSender() == _deployerAddress || _msgSender() == _owner, "Forbidden");
         _;
     }
     enum EOrderType{
@@ -37,7 +37,7 @@ contract AvatarArtExchange is Runnable, IAvatarArtExchange{
     uint256 constant public PRICE_MULTIPLIER = 1000000000000000000;
     
     //Address of contract that will generate token for specific NFT
-    address public deployerAddress;
+    address public _deployerAddress;
     
     uint256 public _fee;
     uint256 private _buyOrderIndex = 1;
@@ -49,8 +49,6 @@ contract AvatarArtExchange is Runnable, IAvatarArtExchange{
     //Stores users' orders for trading
     mapping(address => mapping(address => Order[])) public _buyOrders;
     mapping(address => mapping(address => Order[])) public _sellOrders;
-    
-    uint256 private _feeTotal = 0;
     
     constructor(uint256 fee){
         _fee = fee;
@@ -175,7 +173,7 @@ contract AvatarArtExchange is Runnable, IAvatarArtExchange{
     
     function setDeployerAddress(address newAddress) public onlyOwner{
         require(newAddress != address(0), "Zero address");
-        deployerAddress = newAddress;
+        _deployerAddress = newAddress;
     }
     
    /**
@@ -214,9 +212,9 @@ contract AvatarArtExchange is Runnable, IAvatarArtExchange{
         uint256 totalPaidAmount = 0;
         //Get all open sell orders that are suitable for `price`
         Order[] memory matchedOrders = getOpenSellOrdersForPrice(token0Address, token1Address, price);
+        uint256 feeTotal = 0;
         if (matchedOrders.length > 0){
             matchedQuantity = 0;
-            uint256 changePrice = 0;
             for(uint256 index = 0; index < matchedOrders.length; index++)
             {
                 Order memory matchedOrder = matchedOrders[index];
@@ -242,25 +240,17 @@ contract AvatarArtExchange is Runnable, IAvatarArtExchange{
                     _updateOrderToBeFilled(token0Address, token1Address, matchedOrder.orderId, EOrderType.Sell);
                 }
 
-                if (matchedOrder.price != changePrice)
-                {
-                    changePrice = matchedOrder.price;
-                    emit PriceChanged(token0Address, token1Address, changePrice, _now());
-                }
-
                 totalPaidAmount += currentFilledQuantity * matchedOrder.price / PRICE_MULTIPLIER;
                 
                 //Create matched order
-                emit OrderFilled(order.orderId, matchedOrder.orderId, matchedOrder.price, currentFilledQuantity, _now());
+                emit OrderFilled(order.orderId, matchedOrder.orderId, matchedOrder.price, currentFilledQuantity, _now(), 0);
 
                 //Increase buy user token0 balance
-                _feeTotal += currentFilledQuantity * _fee / 100 / MULTIPLIER;
+                feeTotal += currentFilledQuantity * _fee / 100 / MULTIPLIER;
                 IERC20(token0Address).transfer(_msgSender(), currentFilledQuantity * (1 - _fee / 100 / MULTIPLIER));
 
                 //Increase sell user token1 balance
                 IERC20(token1Address).transfer(matchedOrder.owner, currentFilledQuantity * matchedOrder.price * (1 - matchedOrder.fee / 100 / MULTIPLIER));
-
-                emit RefreshUserOrders(matchedOrder.owner);
                 
                 if (needToMatchedQuantity == 0)
                     break;
@@ -279,19 +269,8 @@ contract AvatarArtExchange is Runnable, IAvatarArtExchange{
             order.status = EOrderStatus.Filled;
         _buyOrders[token0Address][token1Address].push(order);
         
-        if(_feeTotal > 0){
-            IERC20(token0Address).transfer(_owner, _feeTotal);
-            _feeTotal = 0;
-        }
-        
-        emit RefreshUserOrders(_msgSender());
-        
-        //Event for all user to refresh buy order
-        emit RefreshOpenOrders(token0Address, token1Address, EOrderType.Buy);
-        
-        //If has matchedOrders, emit event for refresh sell order
-        if (matchedOrders.length > 0)
-            emit RefreshOpenOrders(token0Address, token1Address, EOrderType.Sell);
+        if(feeTotal > 0)
+            IERC20(token0Address).transfer(_owner, feeTotal);
         
         _buyOrderIndex++;
         emit OrderCreated(_now(), _msgSender(), token0Address, token1Address, EOrderType.Buy, price, quantity, order.orderId);
@@ -321,9 +300,9 @@ contract AvatarArtExchange is Runnable, IAvatarArtExchange{
         
         IERC20(token0Address).transferFrom(_msgSender(), address(this), quantity);
         Order[] memory matchedOrders = getOpenBuyOrdersForPrice(token0Address, token1Address, price);
+        uint256 feeTotal = 0;
         if (matchedOrders.length > 0){
             matchedQuantity = 0;
-            uint256 changedPrice = 0;
             for(uint index = 0; index < matchedOrders.length; index++)
             {
                 Order memory matchedOrder = matchedOrders[index];
@@ -349,19 +328,14 @@ contract AvatarArtExchange is Runnable, IAvatarArtExchange{
                     _updateOrderToBeFilled(token0Address, token1Address, matchedOrder.orderId, EOrderType.Buy);
                 }
                 
-                emit OrderFilled(matchedOrder.orderId, order.orderId, matchedOrder.price, currentMatchedQuantity, _now());
-               
-                if (matchedOrder.price != changedPrice)
-                    emit PriceChanged(token0Address, token1Address, changedPrice, _now());
+                emit OrderFilled(matchedOrder.orderId, order.orderId, matchedOrder.price, currentMatchedQuantity, _now(), 1);
 
                 //Increase buy user token0 balance
                 IERC20(token0Address).transfer(matchedOrder.owner, currentMatchedQuantity * (1 - matchedOrder.fee / 100 / MULTIPLIER));
 
                 //Increase sell user token1 balance
-                _feeTotal += currentMatchedQuantity * matchedOrder.price * _fee / 100 / MULTIPLIER / PRICE_MULTIPLIER;
+                feeTotal += currentMatchedQuantity * matchedOrder.price * _fee / 100 / MULTIPLIER / PRICE_MULTIPLIER;
                 IERC20(token1Address).transfer(_msgSender(), currentMatchedQuantity * matchedOrder.price * (1 - _fee / 100 / MULTIPLIER / PRICE_MULTIPLIER));
-
-                emit RefreshUserOrders(matchedOrder.owner);
 
                 if (needToMatchedQuantity == 0)
                     break;
@@ -376,19 +350,8 @@ contract AvatarArtExchange is Runnable, IAvatarArtExchange{
        
         _sellOrders[token0Address][token1Address].push(order);
         
-        if(_feeTotal > 0){
-            IERC20(token1Address).transfer(_owner, _feeTotal);
-            _feeTotal = 0;
-        }
-        
-        emit RefreshUserOrders(_msgSender());
-        
-        //Event for all user to refresh buy order
-        emit RefreshOpenOrders(token0Address, token1Address, EOrderType.Sell);
-        
-        //If has matchedOrders, emit event for refresh sell order
-        if (matchedOrders.length > 0)
-            emit RefreshOpenOrders(token0Address, token1Address, EOrderType.Buy);
+        if(feeTotal > 0)
+            IERC20(token1Address).transfer(_owner, feeTotal);
 
         _sellOrderIndex++;
         emit OrderCreated(_now(), _msgSender(), token0Address, token1Address, EOrderType.Sell, price, quantity, order.orderId);
@@ -498,8 +461,5 @@ contract AvatarArtExchange is Runnable, IAvatarArtExchange{
     event OrderCreated(uint256 time, address account, 
         address token0Address, address token1Address, EOrderType orderType, uint256 price, uint256 quantity, uint256 orderId);
     event OrderCanceled(uint256 time, uint256 orderId);
-    event PriceChanged(address token0Address, address token1Address, uint256 price, uint256 time);
-    event RefreshUserOrders(address account);
-    event RefreshOpenOrders(address token0Address, address token1Address, EOrderType orderType);
-    event OrderFilled(uint256 buyOrderId, uint256 sellOrderId, uint256 price, uint256 quantity, uint256 time);
+    event OrderFilled(uint256 buyOrderId, uint256 sellOrderId, uint256 price, uint256 quantity, uint256 time, uint256 orderType);
 }
