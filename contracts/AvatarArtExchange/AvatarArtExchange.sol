@@ -290,8 +290,7 @@ contract AvatarArtExchange is Runnable, IAvatarArtExchange{
         });
         
         IERC20(token0Address).transferFrom(_msgSender(), address(this), quantity);
-        Order[] memory matchedOrders = getOpenBuyOrdersForPrice(token0Address, token1Address, price);
-        uint256 feeTotal = 0;
+        Order[] memory matchedOrders = getOpenBuyOrdersForPrice(token0Address, token1Address, price);        
         if (matchedOrders.length > 0){
             matchedQuantity = 0;
             for(uint index = 0; index < matchedOrders.length; index++)
@@ -345,9 +344,6 @@ contract AvatarArtExchange is Runnable, IAvatarArtExchange{
             order.status = EOrderStatus.Filled;
        
         _sellOrders[token0Address][token1Address].push(order);
-        
-        if(feeTotal > 0)
-            IERC20(token1Address).transfer(_owner, feeTotal);
 
         _sellOrderIndex++;
         emit OrderCreated(_now(), _msgSender(), token0Address, token1Address, EOrderType.Sell, price, quantity, order.orderId, _fee);
