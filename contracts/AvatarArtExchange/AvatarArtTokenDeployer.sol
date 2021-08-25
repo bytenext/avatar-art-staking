@@ -59,7 +59,7 @@ contract AvatarArtTokenDeployer is Ownable, IERC721Receiver {
         AvatarArtERC20 deployedContract = new AvatarArtERC20(tokenInfo.name, tokenInfo.symbol, tokenInfo.totalSupply, tokenInfo.tokenOwner, _owner);
         tokenInfo.tokenAddress = address(deployedContract);
         
-        emit NftTokenDeployed(tokenInfo.tokenAddress, tokenInfo.name, tokenInfo.symbol, tokenInfo.totalSupply, tokenInfo.pairToAddress, _msgSender());
+        emit NftTokenDeployed(tokenId, tokenInfo.tokenAddress, tokenInfo.name, tokenInfo.symbol, tokenInfo.totalSupply, tokenInfo.pairToAddress, _msgSender());
         return tokenInfo.tokenAddress;
     }
 
@@ -91,6 +91,6 @@ contract AvatarArtTokenDeployer is Ownable, IERC721Receiver {
         return bytes4(keccak256("onERC721Received(address,address,uint256,bytes)"));
     }
     
-    event NftTokenDeployed(address tokenAddress, string name, string symbol, uint256 totalSupply, address pairToAddress, address balanceAddress);
+    event NftTokenDeployed(uint256 tokenId, address tokenAddress, string name, string symbol, uint256 totalSupply, address pairToAddress, address balanceAddress);
     event NftTokenBurned(address owner, uint256 tokenId);
 }
