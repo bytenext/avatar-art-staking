@@ -9,7 +9,7 @@ import "./interfaces/IAvatarArtArtistKYC.sol";
 contract AvatarArtNFT is ERC721, Ownable{
     IAvatarArtArtistKYC internal _avatarArtArtistKYC;
     
-    constructor() ERC721("ByteNext", "BNU"){}
+    constructor() ERC721("AvatarArt", "AvatarArtNFT"){}
     
     /**
      * @dev Create new NFT 

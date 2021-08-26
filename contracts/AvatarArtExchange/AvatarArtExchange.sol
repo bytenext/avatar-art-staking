@@ -184,9 +184,9 @@ contract AvatarArtExchange is Runnable, IAvatarArtExchange{
     function buy(address token0Address, address token1Address, uint256 price, uint256 quantity) public override isRunning returns(bool){
         require(_isTradable[token0Address][token1Address], "Can not tradable");
         require(price > 0 && quantity > 0, "Zero input");
-        
-        uint256 matchedQuantity = 0;
-        uint256 needToMatchedQuantity = quantity;
+
+        uint256 allTotalPaidAmount = price * quantity;
+        IERC20(token1Address).transferFrom(_msgSender(), address(this), allTotalPaidAmount);
         
         Order memory order = Order({
             orderId: _buyOrderIndex,
@@ -200,9 +200,12 @@ contract AvatarArtExchange is Runnable, IAvatarArtExchange{
         });
         
         uint256 totalPaidAmount = 0;
+        uint256 matchedQuantity = 0;
+
         //Get all open sell orders that are suitable for `price`
         Order[] memory matchedOrders = getOpenSellOrdersForPrice(token0Address, token1Address, price);
         if (matchedOrders.length > 0){
+            uint256 needToMatchedQuantity = quantity;
             matchedQuantity = 0;
             for(uint256 index = 0; index < matchedOrders.length; index++)
             {
@@ -244,16 +247,17 @@ contract AvatarArtExchange is Runnable, IAvatarArtExchange{
                 IERC20(token1Address).transfer(matchedOrder.owner, currentFilledQuantity * matchedOrder.price * (1 - matchedOrder.fee / 100 / MULTIPLIER) / PRICE_MULTIPLIER);
 
                 //Create matched order
-                emit OrderFilled(order.orderId, matchedOrder.orderId, matchedOrder.price, currentFilledQuantity, _now(), 0);
+                emit OrderFilled(order.orderId, matchedOrder.orderId, matchedOrder.price, currentFilledQuantity, _now(), EOrderType.Buy);
                 
                 if (needToMatchedQuantity == 0)
                     break;
             }
         }
 
+        //Payback token for user
         totalPaidAmount += price * (quantity - matchedQuantity) / PRICE_MULTIPLIER;
-        if(totalPaidAmount > 0)
-            IERC20(token1Address).transferFrom(_msgSender(), address(this), totalPaidAmount);
+        if(totalPaidAmount < allTotalPaidAmount)
+            IERC20(token1Address).transfer(_msgSender(), allTotalPaidAmount - totalPaidAmount);
 
         //Create order
         order.filledQuantity = matchedQuantity;
@@ -274,10 +278,9 @@ contract AvatarArtExchange is Runnable, IAvatarArtExchange{
     function sell(address token0Address, address token1Address, uint256 price, uint256 quantity) public override isRunning returns(bool){
         require(_isTradable[token0Address][token1Address], "Can not tradable");
         require(price > 0 && quantity > 0, "Zero input");
-        
-        uint256 matchedQuantity = 0;
-        uint256 needToMatchedQuantity = quantity;
 
+        IERC20(token0Address).transferFrom(_msgSender(), address(this), quantity);
+        
         Order memory order = Order({
             orderId: _sellOrderIndex,
             owner: _msgSender(),
@@ -288,10 +291,12 @@ contract AvatarArtExchange is Runnable, IAvatarArtExchange{
             fee: _fee,
             status: EOrderStatus.Open
         });
+
+        uint256 matchedQuantity = 0;
         
-        IERC20(token0Address).transferFrom(_msgSender(), address(this), quantity);
         Order[] memory matchedOrders = getOpenBuyOrdersForPrice(token0Address, token1Address, price);        
         if (matchedOrders.length > 0){
+            uint256 needToMatchedQuantity = quantity;
             matchedQuantity = 0;
             for(uint index = 0; index < matchedOrders.length; index++)
             {
@@ -330,7 +335,7 @@ contract AvatarArtExchange is Runnable, IAvatarArtExchange{
                 //Increase sell user token1 balance
                 IERC20(token1Address).transfer(_msgSender(), currentMatchedQuantity * matchedOrder.price * (1 - _fee / 100 / MULTIPLIER) / PRICE_MULTIPLIER);
 
-                emit OrderFilled(matchedOrder.orderId, order.orderId, matchedOrder.price, currentMatchedQuantity, _now(), 1);
+                emit OrderFilled(matchedOrder.orderId, order.orderId, matchedOrder.price, currentMatchedQuantity, _now(), EOrderType.Sell);
 
                 if (needToMatchedQuantity == 0)
                     break;
@@ -467,5 +472,5 @@ contract AvatarArtExchange is Runnable, IAvatarArtExchange{
     event OrderCreated(uint256 time, address account, 
         address token0Address, address token1Address, EOrderType orderType, uint256 price, uint256 quantity, uint256 orderId, uint256 fee);
     event OrderCanceled(uint256 time, uint256 orderId);
-    event OrderFilled(uint256 buyOrderId, uint256 sellOrderId, uint256 price, uint256 quantity, uint256 time, uint256 orderType);
+    event OrderFilled(uint256 buyOrderId, uint256 sellOrderId, uint256 price, uint256 quantity, uint256 time, EOrderType orderType);
 }
