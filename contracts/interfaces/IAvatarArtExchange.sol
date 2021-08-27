@@ -6,7 +6,7 @@ interface IAvatarArtExchange{
     /**
      * @dev Allow or disallow `token0Address` to be traded on AvatarArtOrderBook
     */
-    function toogleTradableStatus(address token0Address, address token1Address) external returns(bool);
+    function setPairInfo(address token0Address, address token1Address, bool tradable, uint256 minPrice, uint256 maxPrice) external returns(bool);
     
     /**
      * @dev Buy `token0Address` with `price` and `amount`

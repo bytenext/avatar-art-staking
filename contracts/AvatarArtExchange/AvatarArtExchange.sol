@@ -17,6 +17,12 @@ contract AvatarArtExchange is Runnable, IAvatarArtExchange{
         Filled,
         Canceled
     }
+
+    struct PairInfo{
+        bool isTradable;
+        uint256 minPrice;
+        uint256 maxPrice;
+    }
     
     struct Order{
         uint256 orderId;
@@ -30,19 +36,24 @@ contract AvatarArtExchange is Runnable, IAvatarArtExchange{
     }
     
     uint256 constant public MULTIPLIER = 1000;
-    uint256 constant public PRICE_MULTIPLIER = 1000000000000000000;
+    uint256 constant public PRICE_MULTIPLIER = 1000000;
     
     uint256 public _fee;
-    uint256 private _buyOrderIndex = 1;
-    uint256 private _sellOrderIndex = 1;
+    uint256 private _orderIndex = 1;
     
-    //Checks whether an `token0Address` can be tradable or not
-    mapping(address => mapping(address => bool)) public _isTradable;
+    //PairInfo of token0Address and token1Address: Information about tradable, min price and max price
+    //Token0Address => Token1Address => PairInfo
+    mapping(address => mapping(address => PairInfo)) public _pairInfos;
     
     //Stores users' orders for trading
+    //Token0Address => Token1Address => Order list
     mapping(address => mapping(address => Order[])) public _buyOrders;
+
+    //Token0Address => Token1Address => Order list
     mapping(address => mapping(address => Order[])) public _sellOrders;
 
+    //Fee total that platform receives from transactions
+    //TokenAddress => Fee amount
     mapping(address => uint256) public _systemFees;
     
     constructor(uint256 fee){
@@ -161,6 +172,23 @@ contract AvatarArtExchange is Runnable, IAvatarArtExchange{
         
         return result;
     }
+
+    /**
+     * @dev Check whether the pair can tradable
+     */ 
+    function isTradable(address token0Address, address token1Address, uint256 price) public view returns(bool){
+        PairInfo memory pairInfo = _pairInfos[token0Address][token1Address];
+        if(!pairInfo.isTradable)
+            return false;
+
+        if(pairInfo.minPrice > 0 && pairInfo.minPrice > price)
+            return false;
+        
+        if(pairInfo.maxPrice > 0 && pairInfo.maxPrice < price)
+            return false;
+
+        return true;
+    }
     
     function setFee(uint256 fee) public onlyOwner{
         _fee = fee;
@@ -169,8 +197,12 @@ contract AvatarArtExchange is Runnable, IAvatarArtExchange{
    /**
      * @dev Allow or disallow `token0Address` to be traded on AvatarArtOrderBook
     */
-    function toogleTradableStatus(address token0Address, address token1Address) public override onlyOwner returns(bool){
-        _isTradable[token0Address][token1Address] = !_isTradable[token0Address][token1Address];
+    function setPairInfo(address token0Address, address token1Address, bool tradable, uint256 minPrice, uint256 maxPrice) public override onlyOwner returns(bool){
+        _pairInfos[token0Address][token1Address] = PairInfo({
+            isTradable: tradable,
+            minPrice: minPrice,
+            maxPrice: maxPrice
+        });
         return true;
     }
     
@@ -182,14 +214,14 @@ contract AvatarArtExchange is Runnable, IAvatarArtExchange{
      *    2. Process buy order 
      */ 
     function buy(address token0Address, address token1Address, uint256 price, uint256 quantity) public override isRunning returns(bool){
-        require(_isTradable[token0Address][token1Address], "Can not tradable");
+        require(isTradable(token0Address, token1Address, price), "Can not tradable");
         require(price > 0 && quantity > 0, "Zero input");
 
-        uint256 allTotalPaidAmount = price * quantity;
+        uint256 allTotalPaidAmount = price * quantity / PRICE_MULTIPLIER;
         IERC20(token1Address).transferFrom(_msgSender(), address(this), allTotalPaidAmount);
         
         Order memory order = Order({
-            orderId: _buyOrderIndex,
+            orderId: _orderIndex,
             owner: _msgSender(),
             price: price,
             quantity: quantity,
@@ -267,7 +299,7 @@ contract AvatarArtExchange is Runnable, IAvatarArtExchange{
             order.status = EOrderStatus.Filled;
         _buyOrders[token0Address][token1Address].push(order);
         
-        _buyOrderIndex++;
+        _orderIndex++;
         emit OrderCreated(_now(), _msgSender(), token0Address, token1Address, EOrderType.Buy, price, quantity, order.orderId, _fee);
         return true;
     }
@@ -276,13 +308,13 @@ contract AvatarArtExchange is Runnable, IAvatarArtExchange{
      * @dev Sell `token0Address` with `price` and `amount`
      */ 
     function sell(address token0Address, address token1Address, uint256 price, uint256 quantity) public override isRunning returns(bool){
-        require(_isTradable[token0Address][token1Address], "Can not tradable");
+        require(isTradable(token0Address, token1Address, price), "Can not tradable");
         require(price > 0 && quantity > 0, "Zero input");
 
         IERC20(token0Address).transferFrom(_msgSender(), address(this), quantity);
         
         Order memory order = Order({
-            orderId: _sellOrderIndex,
+            orderId: _orderIndex,
             owner: _msgSender(),
             price: price,
             quantity: quantity,
@@ -350,7 +382,7 @@ contract AvatarArtExchange is Runnable, IAvatarArtExchange{
        
         _sellOrders[token0Address][token1Address].push(order);
 
-        _sellOrderIndex++;
+        _orderIndex++;
         emit OrderCreated(_now(), _msgSender(), token0Address, token1Address, EOrderType.Sell, price, quantity, order.orderId, _fee);
         return true;
     }
