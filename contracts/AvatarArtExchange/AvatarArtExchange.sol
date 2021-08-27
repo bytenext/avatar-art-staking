@@ -403,9 +403,10 @@ contract AvatarArtExchange is Runnable, IAvatarArtExchange{
     function withdrawFee(address[] memory tokenAddresses, address receipent) external onlyOwner{
         require(tokenAddresses.length > 0);
         for(uint256 index = 0; index < tokenAddresses.length; index++){
-            if(_systemFees[tokenAddresses[index]] > 0){
-                IERC20(tokenAddresses[index]).transfer(receipent, _systemFees[tokenAddresses[index]]);
-                _systemFees[tokenAddresses[index]] = 0;
+            address tokenAddress = tokenAddresses[index];
+            if(_systemFees[tokenAddress] > 0){
+                IERC20(tokenAddress).transfer(receipent, _systemFees[tokenAddress]);
+                _systemFees[tokenAddress] = 0;
             }
         }
     }
@@ -425,7 +426,7 @@ contract AvatarArtExchange is Runnable, IAvatarArtExchange{
                 require(order.status == EOrderStatus.Open, "Order is not open");
                 
                 order.status = EOrderStatus.Canceled;
-                IERC20(token1Address).transfer(order.owner, (order.quantity - order.filledQuantity) * order.price);
+                IERC20(token1Address).transfer(order.owner, (order.quantity - order.filledQuantity) * order.price / PRICE_MULTIPLIER);
                 emit OrderCanceled(_now(), orderId);
                 
                 break;
