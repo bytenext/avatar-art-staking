@@ -110,7 +110,23 @@ contract AvatarArtExchange is Runnable, IAvatarArtExchange{
         
         Order[] memory result = new Order[](count);
         for(uint256 index = 0; index < count; index++){
-            result[index] = tempOrders[index];
+            Order memory newOrder = tempOrders[index];
+            result[index] = newOrder;
+            if(index > 0){
+                Order memory oldOrder = result[index - 1];
+                uint256 tempIndex = index;
+                while(newOrder.price > oldOrder.price){
+                    result[tempIndex - 1] = newOrder;
+                    result[index] = oldOrder;
+
+                    tempIndex--;
+
+                    if(tempIndex > 0){
+                        oldOrder = result[tempIndex - 1];
+                    }else
+                        break;
+                }
+            }
         }
         
         return result;
@@ -167,7 +183,23 @@ contract AvatarArtExchange is Runnable, IAvatarArtExchange{
         
         Order[] memory result = new Order[](count);
         for(uint256 index = 0; index < count; index++){
-            result[index] = tempOrders[index];
+            Order memory newOrder = tempOrders[index];
+            result[index] = newOrder;
+            if(index > 0){
+                Order memory oldOrder = result[index - 1];
+                uint256 tempIndex = index;
+                while(newOrder.price < oldOrder.price){
+                    result[tempIndex - 1] = newOrder;
+                    result[index] = oldOrder;
+
+                    tempIndex--;
+
+                    if(tempIndex > 0){
+                        oldOrder = result[tempIndex - 1];
+                    }else
+                        break;
+                }
+            }
         }
         
         return result;
@@ -270,13 +302,14 @@ contract AvatarArtExchange is Runnable, IAvatarArtExchange{
                 _increaseFeeReward(token0Address, currentFilledQuantity * _fee / 100 / MULTIPLIER);
                 
                 //Increase buy user token0 balance
-                IERC20(token0Address).transfer(_msgSender(), currentFilledQuantity * (1 - _fee / 100 / MULTIPLIER));
+                IERC20(token0Address).transfer(_msgSender(), currentFilledQuantity - currentFilledQuantity * _fee / 100 / MULTIPLIER);
 
                 //Save fee
                 _increaseFeeReward(token1Address, currentFilledQuantity * matchedOrder.price * matchedOrder.fee / 100 / MULTIPLIER / PRICE_MULTIPLIER);
                 
                 //Increase sell user token1 balance
-                IERC20(token1Address).transfer(matchedOrder.owner, currentFilledQuantity * matchedOrder.price * (1 - matchedOrder.fee / 100 / MULTIPLIER) / PRICE_MULTIPLIER);
+                IERC20(token1Address).transfer(matchedOrder.owner,
+                    (currentFilledQuantity * matchedOrder.price - currentFilledQuantity * matchedOrder.price * matchedOrder.fee / 100 / MULTIPLIER) / PRICE_MULTIPLIER);
 
                 //Create matched order
                 emit OrderFilled(order.orderId, matchedOrder.orderId, matchedOrder.price, currentFilledQuantity, _now(), EOrderType.Buy);
@@ -356,16 +389,18 @@ contract AvatarArtExchange is Runnable, IAvatarArtExchange{
                 }
                 
                 //Save fee
-                _increaseFeeReward(token0Address, currentMatchedQuantity * _fee / 100 / MULTIPLIER);
+                uint256 feeAmount = currentMatchedQuantity * _fee / 100 / MULTIPLIER;
+                _increaseFeeReward(token0Address, feeAmount);
                 
                 //Increase buy user token0 balance
-                IERC20(token0Address).transfer(matchedOrder.owner, currentMatchedQuantity * (1 - _fee / 100 / MULTIPLIER));
+                IERC20(token0Address).transfer(matchedOrder.owner, currentMatchedQuantity - feeAmount);
                 
                 //Save fee
-                _increaseFeeReward(token1Address, currentMatchedQuantity * matchedOrder.price * _fee / 100 / MULTIPLIER / PRICE_MULTIPLIER);
+                feeAmount = currentMatchedQuantity * matchedOrder.price * _fee / 100 / MULTIPLIER / PRICE_MULTIPLIER;
+                _increaseFeeReward(token1Address, feeAmount);
 
                 //Increase sell user token1 balance
-                IERC20(token1Address).transfer(_msgSender(), currentMatchedQuantity * matchedOrder.price * (1 - _fee / 100 / MULTIPLIER) / PRICE_MULTIPLIER);
+                IERC20(token1Address).transfer(_msgSender(), currentMatchedQuantity * matchedOrder.price / PRICE_MULTIPLIER - feeAmount);
 
                 emit OrderFilled(matchedOrder.orderId, order.orderId, matchedOrder.price, currentMatchedQuantity, _now(), EOrderType.Sell);
 
@@ -468,7 +503,7 @@ contract AvatarArtExchange is Runnable, IAvatarArtExchange{
             }
         }else{
             for(uint256 index = 0; index < _sellOrders[token0Address][token1Address].length; index++){
-                Order storage order = _buyOrders[token0Address][token1Address][index];
+                Order storage order = _sellOrders[token0Address][token1Address][index];
                 if(order.orderId == orderId){
                     order.filledQuantity += quantity;
                     break;
@@ -485,16 +520,16 @@ contract AvatarArtExchange is Runnable, IAvatarArtExchange{
             for(uint256 index = 0; index < _buyOrders[token0Address][token1Address].length; index++){
                 Order storage order = _buyOrders[token0Address][token1Address][index];
                 if(order.orderId == orderId){
-                    order.filledQuantity == order.quantity;
+                    order.filledQuantity = order.quantity;
                     order.status = EOrderStatus.Filled;
                     break;
                 }
             }
         }else{
             for(uint256 index = 0; index < _sellOrders[token0Address][token1Address].length; index++){
-                Order storage order = _buyOrders[token0Address][token1Address][index];
+                Order storage order = _sellOrders[token0Address][token1Address][index];
                 if(order.orderId == orderId){
-                    order.filledQuantity == order.quantity;
+                    order.filledQuantity = order.quantity;
                     order.status = EOrderStatus.Filled;
                     break;
                 }
@@ -502,8 +537,7 @@ contract AvatarArtExchange is Runnable, IAvatarArtExchange{
         }
     }
     
-    event OrderCreated(uint256 time, address account, 
-        address token0Address, address token1Address, EOrderType orderType, uint256 price, uint256 quantity, uint256 orderId, uint256 fee);
+    event OrderCreated(uint256 time, address account, address token0Address, address token1Address, EOrderType orderType, uint256 price, uint256 quantity, uint256 orderId, uint256 fee);
     event OrderCanceled(uint256 time, uint256 orderId);
     event OrderFilled(uint256 buyOrderId, uint256 sellOrderId, uint256 price, uint256 quantity, uint256 time, EOrderType orderType);
 }
