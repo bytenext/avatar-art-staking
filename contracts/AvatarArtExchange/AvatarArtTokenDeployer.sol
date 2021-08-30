@@ -20,6 +20,9 @@ contract AvatarArtTokenDeployer is Ownable, IERC721Receiver {
 
     IERC721 public _avatarArtNft;
 
+    //`Pair to address` is allowed to create pair with new token
+    //Mapping Address => Boolean
+    mapping(address => bool) public _allowedPairs;
     mapping(uint256 => TokenInfo) public _tokenInfos;
 
     constructor(address avatarNftAddress){
@@ -38,6 +41,7 @@ contract AvatarArtTokenDeployer is Ownable, IERC721Receiver {
         address tokenOwner,
         address pairToAddress) external onlyOwner{
         require(tokenOwner != address(0), "Token owner is address zero");
+        require(_allowedPairs[pairToAddress], "pairToAddress is not allowed");
 
         _tokenInfos[tokenId] = TokenInfo({
             name: name,
@@ -81,6 +85,10 @@ contract AvatarArtTokenDeployer is Ownable, IERC721Receiver {
         tokenInfo.isApproved = false;
 
         emit NftTokenBurned(_msgSender(), tokenId);
+    }
+
+    function toggleAllowedPair(address pairAddress) external onlyOwner{
+        _allowedPairs[pairAddress] = !_allowedPairs[pairAddress];
     }
 
     function withdrawNft(uint256 tokenId, address receipent) external onlyOwner{
